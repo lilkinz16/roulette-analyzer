@@ -82,12 +82,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-from io import BytesIO
 
-st.set_page_config(page_title="Phân Tích Roulette", layout="centered")
 
 group_map = {
     'A': [0, 2, 4, 15, 17, 19, 21, 25, 32, 34],
