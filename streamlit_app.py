@@ -35,6 +35,17 @@ method = st.radio("🔍 Chọn cách gợi ý cược", [
     "🧠 AI Voting: tổng hợp nhiều chiến lược"
 ])
 [0]
+   sugg = best
+        else:
+            sugg = prev
+
+    suggestions.append(sugg)
+    hit = "🟢" if current in sugg else "🔴"
+    hits.append(hit)
+
+data["Gợi ý trước"] = suggestions
+data["Kết quả"] = hits
+
 # Xử lý đầu vào
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
@@ -91,13 +102,7 @@ for i in range(len(data)):
         prob_dict = markov_prob.get(prev, {})
         if prob_dict:
             best = max(prob_dict.items(), key=lambda x: x[1])[0]
-            sugg = best
-        else:
-            sugg = prev
-
-    suggestions.append(sugg)
-    hit = "🟢" if current in sugg else "🔴"
-    hits.append(hit)
+         
 
 data["Gợi ý trước"] = suggestions
 data["Kết quả"] = hits
