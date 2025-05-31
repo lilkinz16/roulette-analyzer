@@ -35,7 +35,7 @@ method = st.radio("🔍 Chọn cách gợi ý cược", [
     "🧠 AI Voting: tổng hợp nhiều chiến lược"
 ])
 [0]
-   sugg = best
+            sugg = best
         else:
             sugg = prev
 
