@@ -27,6 +27,7 @@ method = st.radio("🔍 Chọn cách gợi ý cược", [
     "2️⃣ Gần nhất + Nhóm chưa xuất hiện gần đây",
     "3️⃣ Gợi ý theo cân bằng nhóm",
     "4️⃣ Mẫu lặp A-x-A hoặc A-A-x"
+    "🔟 Markov Chain: xác suất chuyển nhóm"
 ])
 
 # Xử lý dữ liệu
@@ -35,6 +36,20 @@ numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
 data["Chu kỳ 5 tay"] = (data.index // 5) + 1
+
+# Tính toán Markov nếu cần
+markov_matrix = defaultdict(lambda: defaultdict(int))
+if method.startswith("🔟") and len(data) > 1:
+    for i in range(len(data) - 1):
+        from_g = data.loc[i, "Nhóm"]
+        to_g = data.loc[i + 1, "Nhóm"]
+        markov_matrix[from_g][to_g] += 1
+
+    # Chuyển sang xác suất
+    markov_prob = {}
+    for from_g, targets in markov_matrix.items():
+        total = sum(targets.values())
+        markov_prob[from_g] = {to_g: round(count / total, 2) for to_g, count in targets.items()}
 
 # Gợi ý theo phương pháp
 suggestions = []
