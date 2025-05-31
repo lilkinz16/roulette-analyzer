@@ -62,5 +62,16 @@ st.pyplot(fig)
 
 # Tải Excel
 st.subheader("📥 Tải kết quả")
-excel_file = data.to_excel(index=False, engine='openpyxl')
-st.download_button("Tải xuống kết quả dưới dạng Excel", data=excel_file, file_name="roulette_phan_tich.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+from io import BytesIO
+
+buffer = BytesIO()
+with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+    data.to_excel(writer, index=False)
+    writer.save()
+    st.download_button(
+        label="📥 Tải xuống kết quả dưới dạng Excel",
+        data=buffer.getvalue(),
+        file_name="roulette_phan_tich.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
