@@ -1,5 +1,6 @@
 streamlit
 pandas
 matplotlib
+openpyxl
 scikit-learn
-tensorflow-cpu==2.11.0
+
