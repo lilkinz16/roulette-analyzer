@@ -24,7 +24,8 @@ st.title("🎰 Phân Tích Roulette Theo Nhóm A/B/C/D")
 results = st.text_input("Nhập dãy số Roulette (phân tách bằng dấu phẩy):", "29, 21, 15, 14, 26, 0, 19")
 
 # Xử lý dữ liệu
-numbers = [int(x.strip()) for x in results.split(",") if x.strip().isdigit()]
+import re
+numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
 data["Chu kỳ 5 tay"] = (data.index // 5) + 1
