@@ -67,7 +67,7 @@ from io import BytesIO
 buffer = BytesIO()
 with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
     data.to_excel(writer, index=False)
-    writer.save()
+   
     st.download_button(
         label="📥 Tải xuống kết quả dưới dạng Excel",
         data=buffer.getvalue(),
