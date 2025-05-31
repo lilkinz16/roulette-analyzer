@@ -21,12 +21,13 @@ def find_group(num):
 
 st.title("🎰 Phân Tích Roulette Theo Nhóm A/B/C/D")
 
-results = st.text_input("Nhập dãy số Roulette (phân tách bằng dấu phẩy):", "29, 21, 15, 14, 26, 0, 19")
-method = st.radio("🔍 Chọn cách gợi ý cược"), 
+results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "29 21 15 1 0 2 1")
+method = st.radio("🔍 Chọn cách gợi ý cược", [
     "1️⃣ Gần nhất + Nhóm ít nhất",
     "2️⃣ Gần nhất + Nhóm chưa xuất hiện gần đây",
     "3️⃣ Gợi ý theo cân bằng nhóm",
     "4️⃣ Mẫu lặp A-x-A hoặc A-A-x"
+])
 
 # Xử lý dữ liệu
 import re
