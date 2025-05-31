@@ -31,8 +31,8 @@ method = st.radio("🔍 Chọn cách gợi ý cược",
     "4️⃣ Mẫu lặp A-x-A hoặc A-A-x",
     "🔟 Markov Chain: xác suất chuyển nhóm"
     "🔬 Dự đoán bằng AI LSTM",
-    "🧠 AI Voting: tổng hợp nhiều chiến lược")
-])
+    "(🧠 AI Voting: tổng hợp nhiều chiến lược")
+
 
 # Xử lý đầu vào
 numbers = [int(x) for x in re.findall(r'\d+', results)]
