@@ -49,22 +49,27 @@ for i in range(len(data)):
 data["Gợi ý trước"] = suggestions
 data["Kết quả"] = hits
 
-# Ma trận trực quan nhỏ
-st.subheader("🟩 Ma trận màu trực quan")
-fig, ax = plt.subplots(figsize=(8, 4))
-max_columns = 10
-rows = (len(hits) + max_columns - 1) // max_columns
-for idx, hit in enumerate(hits):
-    row = idx // max_columns
-    col = idx % max_columns
-    color = "green" if hit == "🟢" else "red" if hit == "🔴" else "lightgray"
-    ax.add_patch(plt.Rectangle((col, -row), 1, 1, color=color))
-    ax.text(col + 0.5, -row + 0.5, str(numbers[idx]), va="center", ha="center", color="white", fontsize=9)
+import matplotlib.pyplot as plt
 
-ax.set_xlim(0, max_columns)
+# Hiển thị ma trận màu trực quan như ảnh mẫu
+st.subheader("🟩 Ma trận màu nhỏ gọn")
+
+fig, ax = plt.subplots(figsize=(8, 4))
+cols = 10
+rows = (len(data) + cols - 1) // cols
+
+for idx, row in data.iterrows():
+    color = "green" if row["Kết quả"] == "🟢" else "red" if row["Kết quả"] == "🔴" else "gray"
+    r = idx // cols
+    c = idx % cols
+    ax.add_patch(plt.Rectangle((c, -r), 1, 1, color=color))
+    ax.text(c + 0.5, -r + 0.5, str(row["Số"]), va="center", ha="center", color="white", fontsize=10, weight="bold")
+
+ax.set_xlim(0, cols)
 ax.set_ylim(-rows, 0)
 ax.axis("off")
 st.pyplot(fig)
+
 
 # Bảng chi tiết
 st.subheader("📋 Bảng chi tiết kết quả")
