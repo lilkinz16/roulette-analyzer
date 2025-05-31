@@ -123,3 +123,7 @@ plt.ylabel("Số lần xuất hiện")
 plt.title("Tần suất xuất hiện của các nhóm")
 st.pyplot(fig)
 
+# Nếu chọn Markov, hiển thị ma trận
+if method.startswith("🔟") and markov_prob:
+    st.subheader("📊 Ma trận chuyển xác suất (Markov Chain)")
+    st.write(pd.DataFrame(markov_prob).fillna(0))
