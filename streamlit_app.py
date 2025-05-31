@@ -1,11 +1,13 @@
 
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-
 st.set_page_config(page_title="Phân Tích Roulette", layout="centered")
 
-# Nhóm quy ước
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+from io import BytesIO
+from collections import defaultdict
+
 group_map = {
     'A': [0, 2, 4, 15, 17, 19, 21, 25, 32, 34],
     'B': [6, 8, 10, 11, 13, 23, 27, 30, 36],
@@ -26,12 +28,11 @@ method = st.radio("🔍 Chọn cách gợi ý cược", [
     "1️⃣ Gần nhất + Nhóm ít nhất",
     "2️⃣ Gần nhất + Nhóm chưa xuất hiện gần đây",
     "3️⃣ Gợi ý theo cân bằng nhóm",
-    "4️⃣ Mẫu lặp A-x-A hoặc A-A-x"
+    "4️⃣ Mẫu lặp A-x-A hoặc A-A-x",
     "🔟 Markov Chain: xác suất chuyển nhóm"
 ])
 
-# Xử lý dữ liệu
-import re
+# Xử lý đầu vào
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
@@ -50,6 +51,7 @@ if method.startswith("🔟") and len(data) > 1:
     for from_g, targets in markov_matrix.items():
         total = sum(targets.values())
         markov_prob[from_g] = {to_g: round(count / total, 2) for to_g, count in targets.items()}
+
 
 # Gợi ý theo phương pháp
 suggestions = []
