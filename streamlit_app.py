@@ -29,6 +29,25 @@ data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
 data["Chu kỳ 5 tay"] = (data.index // 5) + 1
 
+suggestions = []
+hits = []
+for i in range(len(data)):
+    if i == 0:
+        suggestions.append("—")
+        hits.append("⚪")
+    else:
+        prev_group = data.loc[i - 1, "Nhóm"]
+        freq = data.loc[:i - 1, "Nhóm"].value_counts()
+        least_group = freq.idxmin() if not freq.empty else ""
+        suggestion = f"{prev_group} + {least_group}" if prev_group != least_group else prev_group
+        suggestions.append(suggestion)
+        current = data.loc[i, "Nhóm"]
+        hit = "🟢" if current in suggestion else "🔴"
+        hits.append(hit)
+
+data["Gợi ý trước"] = suggestions
+data["Kết quả"] = hits
+
 # Thống kê
 freq = data["Nhóm"].value_counts().sort_index()
 latest_group = data["Nhóm"].iloc[-1] if not data.empty else ""
@@ -50,6 +69,10 @@ st.subheader("📊 Phân tích thống kê")
 st.write(f"✅ Nhóm gần nhất: **{latest_group}**")
 st.write(f"📌 Độ dài chuỗi liên tiếp: **{streak} lần**")
 st.write(f"🎯 Gợi ý nhóm cược: **{suggested}**")
+
+# Bảng chi tiết
+st.subheader("📋 Bảng chi tiết kết quả")
+st.dataframe(data)
 
 # Biểu đồ
 st.subheader("📈 Biểu đồ tần suất nhóm")
