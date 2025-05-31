@@ -24,16 +24,17 @@ def find_group(num):
 st.title("🎰 Phân Tích Roulette Theo Nhóm A/B/C/D")
 
 results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "29 21 15 1 0 2 1")
-method = st.radio("🔍 Chọn cách gợi ý cược") ,
+
+method = st.radio("🔍 Chọn cách gợi ý cược", [
     "1️⃣ Gần nhất + Nhóm ít nhất",
     "2️⃣ Gần nhất + Nhóm chưa xuất hiện gần đây",
     "3️⃣ Gợi ý theo cân bằng nhóm",
     "4️⃣ Mẫu lặp A-x-A hoặc A-A-x",
     "🔟 Markov Chain: xác suất chuyển nhóm",
-"🔬 Dự đoán bằng AI LSTM",
-    "🧠 AI Voting: tổng hợp nhiều chiến lược",
-
-
+    "🔬 Dự đoán bằng AI LSTM",
+    "🧠 AI Voting: tổng hợp nhiều chiến lược"
+])
+[0]
 # Xử lý đầu vào
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
