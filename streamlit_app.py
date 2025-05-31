@@ -22,6 +22,11 @@ def find_group(num):
 st.title("🎰 Phân Tích Roulette Theo Nhóm A/B/C/D")
 
 results = st.text_input("Nhập dãy số Roulette (phân tách bằng dấu phẩy):", "29, 21, 15, 14, 26, 0, 19")
+method = st.radio("🔍 Chọn cách gợi ý cược", [
+    "1️⃣ Gần nhất + Nhóm ít nhất",
+    "2️⃣ Gần nhất + Nhóm chưa xuất hiện gần đây",
+    "3️⃣ Gợi ý theo cân bằng nhóm",
+    "4️⃣ Mẫu lặp A-x-A hoặc A-A-x"
 
 # Xử lý dữ liệu
 import re
@@ -30,21 +35,39 @@ data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
 data["Chu kỳ 5 tay"] = (data.index // 5) + 1
 
+# Gợi ý theo phương pháp
 suggestions = []
 hits = []
 for i in range(len(data)):
     if i == 0:
         suggestions.append("—")
         hits.append("⚪")
-    else:
-        prev_group = data.loc[i - 1, "Nhóm"]
+        continue
+    current = data.loc[i, "Nhóm"]
+
+    if method.startswith("1️⃣"):
+        prev = data.loc[i - 1, "Nhóm"]
         freq = data.loc[:i - 1, "Nhóm"].value_counts()
-        least_group = freq.idxmin() if not freq.empty else ""
-        suggestion = f"{prev_group} + {least_group}" if prev_group != least_group else prev_group
-        suggestions.append(suggestion)
-        current = data.loc[i, "Nhóm"]
-        hit = "🟢" if current in suggestion else "🔴"
-        hits.append(hit)
+        least = freq.idxmin()
+        sugg = f"{prev} + {least}" if prev != least else prev
+
+    elif method.startswith("2️⃣"):
+        recent = data.loc[max(0, i - 10):i - 1, "Nhóm"]
+        missing = [g for g in group_map if g not in set(recent)]
+        prev = data.loc[i - 1, "Nhóm"]
+        sugg = f"{prev} + {missing[0]}" if missing else prev
+
+    elif method.startswith("3️⃣"):
+        freq = data.loc[:i - 1, "Nhóm"].value_counts()
+        sorted_freq = freq.sort_values()
+        sugg = " + ".join(sorted_freq.head(2).index)
+
+    elif method.startswith("4️⃣"):
+        sugg = data.loc[i - 2, "Nhóm"] if i >= 2 and data.loc[i - 2, "Nhóm"] == data.loc[i - 1, "Nhóm"] else data.loc[i - 1, "Nhóm"]
+
+    suggestions.append(sugg)
+    hit = "🟢" if current in sugg else "🔴"
+    hits.append(hit)
 
 data["Gợi ý trước"] = suggestions
 data["Kết quả"] = hits
