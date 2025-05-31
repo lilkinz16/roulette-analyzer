@@ -83,7 +83,3 @@ plt.ylabel("Số lần xuất hiện")
 plt.title("Tần suất xuất hiện của các nhóm")
 st.pyplot(fig)
 
-# Tải Excel
-st.subheader("📥 Tải kết quả")
-excel_file = data.to_excel(index=False, engine='openpyxl')
-st.download_button("Tải xuống kết quả dưới dạng Excel", data=excel_file, file_name="roulette_phan_tich.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
