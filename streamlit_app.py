@@ -83,6 +83,15 @@ for i in range(len(data)):
     elif method.startswith("4️⃣"):
         sugg = data.loc[i - 2, "Nhóm"] if i >= 2 and data.loc[i - 2, "Nhóm"] == data.loc[i - 1, "Nhóm"] else data.loc[i - 1, "Nhóm"]
 
+    elif method.startswith("🔟"):
+        prev = data.loc[i - 1, "Nhóm"]
+        prob_dict = markov_prob.get(prev, {})
+        if prob_dict:
+            best = max(prob_dict.items(), key=lambda x: x[1])[0]
+            sugg = best
+        else:
+            sugg = prev
+
     suggestions.append(sugg)
     hit = "🟢" if current in sugg else "🔴"
     hits.append(hit)
