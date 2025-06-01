@@ -156,8 +156,7 @@ plt.ylim(-max_len, 1)
 plt.tight_layout()
 st.pyplot(fig)
 # ==== Hiển thị kết quả & thống kê ====
-st.subheader("🧾 Kết quả phân loại")
-st.dataframe(data)
+
 
 # Biểu đồ thống kê nhóm
 st.subheader("📊 Tần suất nhóm A/B/C/D")
@@ -166,9 +165,7 @@ st.bar_chart(data["Nhóm"].value_counts())
 st.subheader("📊 Tần suất tá nhóm T1/T2/T3")
 st.bar_chart(data["Tá nhóm"].value_counts())
 
-# Bảng chi tiết
-st.subheader("📋 Bảng chi tiết kết quả")
-st.dataframe(data)
+
 
 latest_group = data["Nhóm"].iloc[-1]
 streak = 1
