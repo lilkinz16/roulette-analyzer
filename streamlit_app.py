@@ -82,3 +82,37 @@ data["Kết quả"] = hits
 # Hiển thị kết quả
 st.subheader("📋 Kết quả dự đoán")
 st.dataframe(data.tail(100), use_container_width=True)
+# Parse numbers
+numbers = [int(x) for x in re.findall(r'\d+', results)]
+groups = [find_group(n) for n in numbers]
+
+# Prepare dataframe
+data = pd.DataFrame({
+    "Tay": list(range(1, len(numbers) + 1)),
+    "Số": numbers,
+    "Nhóm": groups
+})
+
+# Generate suggestions for next round
+suggestions = ["—", "—"]
+for i in range(2, len(groups)):
+    pair = groups[i-2] + groups[i-1]
+    suggestions.append(pair)
+data["Gợi ý từ 2 tay trước"] = suggestions
+
+# Generate result comparison
+hits = ["⚪", "⚪"]
+for i in range(2, len(groups)):
+    suggestion = suggestions[i]
+    actual = groups[i]
+    hits.append("🟢" if actual in suggestion else "🔴")
+data["Kết quả"] = hits
+
+# Show table
+st.dataframe(data)
+
+# Show suggestion for next (n+1) hand
+if len(groups) >= 2:
+    next_suggestion = groups[-2] + groups[-1]
+    st.markdown(f"🔮 **Gợi ý tay tiếp theo (tay {len(groups)+1}): `{next_suggestion}`**")
+
