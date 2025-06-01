@@ -110,16 +110,54 @@ def vote_strategy(i, data, markov_prob):
 
 # ==== Gợi ý và đánh giá ====
 suggestions, hits = [], []
-for i in range(len(data)):
-    if i == 0:
-        suggestions.append("—")
-        hits.append("⚪")
-        continue
-    sugg = vote_strategy(i, data, markov_prob)
-    actual = data.loc[i, "Nhóm"]
-    hit = "🟢" if actual in sugg else "🔴"
-    suggestions.append(sugg)
-    hits.append(hit)
+if method.startswith("🔬"):
+    import os
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    from lstm_predictor import train_and_predict_lstm
+    group_seq = data["Nhóm"].tolist()
+    for i in range(len(data)):
+        if i < 10:
+            suggestions.append("—")
+            hits.append("⚪")
+        else:
+            try:
+                pred = train_and_predict_lstm(group_seq[:i])
+                suggestions.append(pred)
+                hits.append("🟢" if data.loc[i, "Nhóm"] == pred else "🔴")
+            except:
+                suggestions.append("Lỗi")
+                hits.append("⚪")
+else:
+    for i in range(len(data)):
+        if i == 0:
+            suggestions.append("—")
+            hits.append("⚪")
+            continue
+        current = data.loc[i, "Nhóm"]
+        prev = data.loc[i - 1, "Nhóm"]
+        if method.startswith("1️⃣"):
+            freq = data.loc[:i - 1, "Nhóm"].value_counts()
+            least = freq.idxmin()
+            sugg = f"{prev} + {least}" if prev != least else prev
+        elif method.startswith("2️⃣"):
+            recent = data.loc[max(0, i - 10):i - 1, "Nhóm"]
+            missing = [g for g in group_map if g not in set(recent)]
+            sugg = f"{prev} + {missing[0]}" if missing else prev
+        elif method.startswith("3️⃣"):
+            freq = data.loc[:i - 1, "Nhóm"].value_counts()
+            sugg = " + ".join(freq.sort_values().head(2).index)
+        elif method.startswith("4️⃣"):
+            sugg = data.loc[i - 2, "Nhóm"] if i >= 2 and data.loc[i - 2, "Nhóm"] == data.loc[i - 1, "Nhóm"] else prev
+        elif method.startswith("🔟"):
+            prob_dict = markov_prob.get(prev, {})
+            sugg = max(prob_dict.items(), key=lambda x: x[1])[0] if prob_dict else prev
+        elif method.startswith("🧠"):
+            sugg = vote_strategy(i)
+        else:
+            sugg = prev
+        suggestions.append(sugg)
+        hits.append("🟢" if current in sugg else "🔴")
+
 
 data["Gợi ý trước"] = suggestions
 data["Kết quả"] = hits
