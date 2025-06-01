@@ -49,8 +49,6 @@ for i in range(2, len(groups)):
     hits.append("🟢" if actual in suggestion else "🔴")
 data["Kết quả"] = hits
 
-# Show table
-st.dataframe(data)
 
 # Show suggestion for next (n+1) hand
 if len(groups) >= 2:
