@@ -48,12 +48,6 @@ def find_column(num):
 results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "29,21,15,1,0,2,1")
 method = st.radio("🔍 Chọn cách gợi ý cược", [
     "🧠 Voting kết hợp nhóm A/B/C/D + T1/T2/T3 + Cột"
-    "1️⃣ Gần nhất + Nhóm ít nhất",
-    "2️⃣ Gần nhất + Nhóm chưa xuất hiện gần đây",
-    "3️⃣ Gợi ý theo cân bằng nhóm",
-    "4️⃣ Mẫu lặp A-x-A hoặc A-A-x",
-    "🔟 Markov Chain: xác suất chuyển nhóm",
-
 ])
 
 numbers = [int(x) for x in re.findall(r'\d+', results)]
@@ -110,54 +104,16 @@ def vote_strategy(i, data, markov_prob):
 
 # ==== Gợi ý và đánh giá ====
 suggestions, hits = [], []
-if method.startswith("🔬"):
-    import os
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    from lstm_predictor import train_and_predict_lstm
-    group_seq = data["Nhóm"].tolist()
-    for i in range(len(data)):
-        if i < 10:
-            suggestions.append("—")
-            hits.append("⚪")
-        else:
-            try:
-                pred = train_and_predict_lstm(group_seq[:i])
-                suggestions.append(pred)
-                hits.append("🟢" if data.loc[i, "Nhóm"] == pred else "🔴")
-            except:
-                suggestions.append("Lỗi")
-                hits.append("⚪")
-else:
-    for i in range(len(data)):
-        if i == 0:
-            suggestions.append("—")
-            hits.append("⚪")
-            continue
-        current = data.loc[i, "Nhóm"]
-        prev = data.loc[i - 1, "Nhóm"]
-        if method.startswith("1️⃣"):
-            freq = data.loc[:i - 1, "Nhóm"].value_counts()
-            least = freq.idxmin()
-            sugg = f"{prev} + {least}" if prev != least else prev
-        elif method.startswith("2️⃣"):
-            recent = data.loc[max(0, i - 10):i - 1, "Nhóm"]
-            missing = [g for g in group_map if g not in set(recent)]
-            sugg = f"{prev} + {missing[0]}" if missing else prev
-        elif method.startswith("3️⃣"):
-            freq = data.loc[:i - 1, "Nhóm"].value_counts()
-            sugg = " + ".join(freq.sort_values().head(2).index)
-        elif method.startswith("4️⃣"):
-            sugg = data.loc[i - 2, "Nhóm"] if i >= 2 and data.loc[i - 2, "Nhóm"] == data.loc[i - 1, "Nhóm"] else prev
-        elif method.startswith("🔟"):
-            prob_dict = markov_prob.get(prev, {})
-            sugg = max(prob_dict.items(), key=lambda x: x[1])[0] if prob_dict else prev
-        elif method.startswith("🧠"):
-            sugg = vote_strategy(i, data, markov_prob)
-        else:
-            sugg = prev
-        suggestions.append(sugg)
-        hits.append("🟢" if current in sugg else "🔴")
-
+for i in range(len(data)):
+    if i == 0:
+        suggestions.append("—")
+        hits.append("⚪")
+        continue
+    sugg = vote_strategy(i, data, markov_prob)
+    actual = data.loc[i, "Nhóm"]
+    hit = "🟢" if actual in sugg else "🔴"
+    suggestions.append(sugg)
+    hits.append(hit)
 
 data["Gợi ý trước"] = suggestions
 data["Kết quả"] = hits
@@ -199,29 +155,3 @@ plt.xlim(0, len(columns))
 plt.ylim(-max_len, 1)
 plt.tight_layout()
 st.pyplot(fig)
-# ==== Hiển thị kết quả & thống kê ====
-
-
-# Biểu đồ thống kê nhóm
-st.subheader("📊 Tần suất nhóm A/B/C/D")
-st.bar_chart(data["Nhóm"].value_counts())
-
-st.subheader("📊 Tần suất tá nhóm T1/T2/T3")
-st.bar_chart(data["Tá nhóm"].value_counts())
-
-
-
-latest_group = data["Nhóm"].iloc[-1]
-streak = 1
-for i in range(len(data) - 2, -1, -1):
-    if data["Nhóm"].iloc[i] == latest_group:
-        streak += 1
-    else:
-        break
-least_group = data["Nhóm"].value_counts().idxmin()
-suggested = f"{latest_group} + {least_group}" if latest_group != least_group else latest_group
-
-st.subheader("📊 Phân tích thống kê")
-st.write(f"✅ Nhóm gần nhất: **{latest_group}**")
-st.write(f"📌 Độ dài chuỗi liên tiếp: **{streak} lần**")
-st.write(f"🎯 Gợi ý nhóm cược: **{suggested}**")
