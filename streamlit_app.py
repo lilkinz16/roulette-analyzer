@@ -56,3 +56,37 @@ st.dataframe(data)
 if len(groups) >= 2:
     next_suggestion = groups[-2] + groups[-1]
     st.markdown(f"🔮 **Gợi ý tay tiếp theo (tay {len(groups)+1}): `{next_suggestion}`**")
+
+# === Bảng Baccarat-style hiển thị kết quả đúng/sai ===
+st.subheader("🧮 Bảng Cầu Baccarat-style")
+
+results_seq = data["Kết quả"].tolist()
+columns = []
+col = []
+last = None
+
+for r in results_seq:
+    if r == last:
+        col.append(r)
+    else:
+        if col:
+            columns.append(col)
+        col = [r]
+        last = r
+if col:
+    columns.append(col)
+
+max_len = max(len(c) for c in columns) if columns else 1
+fig, ax = plt.subplots(figsize=(len(columns), max_len))
+ax.axis('off')
+
+for x, col in enumerate(columns):
+    for y, val in enumerate(col):
+        color = "#4CAF50" if val == '🟢' else "#F44336"
+        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
+        ax.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
+
+plt.xlim(0, len(columns))
+plt.ylim(-max_len, 1)
+plt.tight_layout()
+st.pyplot(fig)
