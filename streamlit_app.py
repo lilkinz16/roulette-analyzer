@@ -201,16 +201,6 @@ plt.tight_layout()
 st.pyplot(fig)
 # ==== Hiển thị kết quả & thống kê ====
 
-
-# Biểu đồ thống kê nhóm
-st.subheader("📊 Tần suất nhóm A/B/C/D")
-st.bar_chart(data["Nhóm"].value_counts())
-
-st.subheader("📊 Tần suất tá nhóm T1/T2/T3")
-st.bar_chart(data["Tá nhóm"].value_counts())
-
-
-
 latest_group = data["Nhóm"].iloc[-1]
 streak = 1
 for i in range(len(data) - 2, -1, -1):
