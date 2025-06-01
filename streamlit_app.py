@@ -45,13 +45,11 @@ method = st.radio("📌 Chọn phương pháp gợi ý:", [
 ])
 
 # Dự đoán
-suggestions, hits = [], []
+predictions = []
 for i in range(len(data)):
     if i == 0:
-        suggestions.append("—")
-        hits.append("⚪")
+        predictions.append("—")
         continue
-    current = data.loc[i, "Nhóm"]
     prev = data.loc[i - 1, "Nhóm"]
 
     if method.startswith("2️⃣"):
@@ -73,12 +71,22 @@ for i in range(len(data)):
     else:
         sugg = prev
 
-    suggestions.append(sugg)
-    hits.append("🟢" if current in sugg else "🔴")
+    predictions.append(sugg)
 
-data["Gợi ý"] = suggestions
+# Dịch gợi ý sang tay sau
+predictions = ["—"] + predictions[:-1]
+
+# Tính kết quả
+hits = ["⚪"]
+for i in range(1, len(data)):
+    actual = data.loc[i, "Nhóm"]
+    pred = predictions[i]
+    hit = "🟢" if actual in pred else "🔴"
+    hits.append(hit)
+
+data["Gợi ý trước đó"] = predictions
 data["Kết quả"] = hits
 
 # Hiển thị kết quả
-st.subheader("📋 Kết quả dự đoán")
+st.subheader("📋 Kết quả dự đoán (gợi ý của tay trước)")
 st.dataframe(data.tail(100), use_container_width=True)
