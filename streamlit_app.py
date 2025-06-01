@@ -15,6 +15,13 @@ group_map = {
     'C': [1, 5, 9, 14, 16, 20, 24, 31, 33],
     'D': [3, 7, 12, 18, 22, 26, 28, 29, 35],
 }
+# Cột (Column): chia 3 cột theo bàn Roulette tiêu chuẩn
+column_map = {
+    'C1': [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34],
+    'C2': [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35],
+    'C3': [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
+}
+
 def find_group(num):
     for group, numbers in group_map.items():
         if num in numbers:
@@ -50,6 +57,7 @@ numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
 data["Tá nhóm"] = data["Số"].apply(find_dozen)
+data["Cột"] = data["Số"].apply(find_column)
 data["Chu kỳ 5 tay"] = (data.index // 5) + 1
 
 # ==== Tính Markov nếu cần ====
@@ -70,16 +78,29 @@ def vote_strategy(i, data, markov_prob):
 
     prev = data.loc[i - 1, "Nhóm"]
     prev_t = data.loc[i - 1, "Tá nhóm"]
+    prev_c = data.loc[i - 1, "Cột"]
     freq = data.loc[:i - 1, "Nhóm"].value_counts()
     t_freq = data.loc[:i - 1, "Tá nhóm"].value_counts()
-
+    c_freq = data.loc[:i - 1, "Cột"].value_counts()
     least = freq.idxmin()
     least_t = t_freq.idxmin()
-
+    least_c = c_freq.idxmin()
     if prev != least: votes += [prev, least]
     else: votes += [prev]
     if prev_t != least_t: votes += [prev_t, least_t]
     else: votes += [prev_t]
+    if prev_c != least_c: votes += [prev_c, least_c]
+    else: votes += [prev_c]
+
+# Markov
+    prob_dict = markov_prob.get(prev, {})
+    if prob_dict:
+        best = max(prob_dict.items(), key=lambda x: x[1])[0]
+        votes += [best]
+
+    vote_count = Counter(votes)
+    top_votes = vote_count.most_common(2)
+    return " + ".join([v[0] for v in top_votes])
 
 # ==== Gợi ý theo phương pháp ====
 def vote_strategy(i):
@@ -163,6 +184,9 @@ st.bar_chart(data["Nhóm"].value_counts())
 
 st.subheader("📊 Tần suất tá nhóm T1/T2/T3")
 st.bar_chart(data["Tá nhóm"].value_counts())
+
+st.subheader("📊 Tần suất cột C1/C2/C3")
+st.bar_chart(data["Cột"].value_counts())
 
 # Bảng chi tiết
 st.subheader("📋 Bảng chi tiết kết quả")
