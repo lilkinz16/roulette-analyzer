@@ -3,9 +3,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+from collections import Counter
 
-st.set_page_config(page_title="📈 Gợi Ý Tay Tiếp Theo", layout="centered")
-st.title("🎰 Dự đoán nhóm cho tay TIẾP THEO dựa vào 2 tay gần nhất")
+st.set_page_config(page_title="Phân Tích Roulette - Gợi ý tay tiếp theo", layout="centered")
+st.title("🎯 Phân Tích Gợi Ý Theo 2 Tay Trước")
 
 group_map = {
     'A': [0, 2, 4, 15, 17, 19, 21, 25, 32, 34],
@@ -13,39 +14,45 @@ group_map = {
     'C': [1, 5, 9, 14, 16, 20, 24, 31, 33],
     'D': [3, 7, 12, 18, 22, 26, 28, 29, 35],
 }
+
 def find_group(num):
-    for g, nums in group_map.items():
-        if num in nums:
-            return g
+    for group, numbers in group_map.items():
+        if num in numbers:
+            return group
     return "?"
 
-# Nhập số
-results = st.text_area("Nhập kết quả Roulette:", "0 6 15 33 22 19")
+results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "22 19 15 33 19")
+
+# Parse numbers
 numbers = [int(x) for x in re.findall(r'\d+', results)]
-data = pd.DataFrame({"Số": numbers})
-data["Nhóm"] = data["Số"].apply(find_group)
+groups = [find_group(n) for n in numbers]
 
-# Tạo gợi ý cho tay kế tiếp
-next_predictions = ["—"] * len(data)
-for i in range(len(data) - 2):
-    g1 = data.loc[i, "Nhóm"]
-    g2 = data.loc[i + 1, "Nhóm"]
-    next_predictions[i + 2] = f"{g1}{g2}"
+# Prepare dataframe
+data = pd.DataFrame({
+    "Tay": list(range(1, len(numbers) + 1)),
+    "Số": numbers,
+    "Nhóm": groups
+})
 
-data["Gợi ý tay kế tiếp"] = next_predictions
+# Generate suggestions for next round
+suggestions = ["—", "—"]
+for i in range(2, len(groups)):
+    pair = groups[i-2] + groups[i-1]
+    suggestions.append(pair)
+data["Gợi ý từ 2 tay trước"] = suggestions
 
-# So sánh kết quả với gợi ý ở tay trước đó
-results = []
-for i in range(len(data)):
-    if i == 0 or i == 1:
-        results.append("⚪")
-    else:
-        pred = data.loc[i - 1, "Gợi ý tay kế tiếp"]
-        actual = data.loc[i, "Nhóm"]
-        results.append("🟢" if actual in pred else "🔴")
+# Generate result comparison
+hits = ["⚪", "⚪"]
+for i in range(2, len(groups)):
+    suggestion = suggestions[i]
+    actual = groups[i]
+    hits.append("🟢" if actual in suggestion else "🔴")
+data["Kết quả"] = hits
 
-data["Kết quả"] = results
+# Show table
+st.dataframe(data)
 
-# Hiển thị bảng
-st.subheader("📋 Bảng kết quả dự đoán tay tiếp theo")
-st.dataframe(data.tail(100), use_container_width=True)
+# Show suggestion for next (n+1) hand
+if len(groups) >= 2:
+    next_suggestion = groups[-2] + groups[-1]
+    st.markdown(f"🔮 **Gợi ý tay tiếp theo (tay {len(groups)+1}): `{next_suggestion}`**")
