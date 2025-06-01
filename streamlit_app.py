@@ -155,3 +155,32 @@ plt.xlim(0, len(columns))
 plt.ylim(-max_len, 1)
 plt.tight_layout()
 st.pyplot(fig)
+# ==== Hiển thị kết quả & thống kê ====
+st.subheader("🧾 Kết quả phân loại")
+st.dataframe(data)
+
+# Biểu đồ thống kê nhóm
+st.subheader("📊 Tần suất nhóm A/B/C/D")
+st.bar_chart(data["Nhóm"].value_counts())
+
+st.subheader("📊 Tần suất tá nhóm T1/T2/T3")
+st.bar_chart(data["Tá nhóm"].value_counts())
+
+# Bảng chi tiết
+st.subheader("📋 Bảng chi tiết kết quả")
+st.dataframe(data)
+
+latest_group = data["Nhóm"].iloc[-1]
+streak = 1
+for i in range(len(data) - 2, -1, -1):
+    if data["Nhóm"].iloc[i] == latest_group:
+        streak += 1
+    else:
+        break
+least_group = data["Nhóm"].value_counts().idxmin()
+suggested = f"{latest_group} + {least_group}" if latest_group != least_group else latest_group
+
+st.subheader("📊 Phân tích thống kê")
+st.write(f"✅ Nhóm gần nhất: **{latest_group}**")
+st.write(f"📌 Độ dài chuỗi liên tiếp: **{streak} lần**")
+st.write(f"🎯 Gợi ý nhóm cược: **{suggested}**")
