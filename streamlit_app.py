@@ -234,3 +234,18 @@ if st.session_state.history:
     hist_df["Kết quả"].value_counts().plot.pie(autopct='%1.1f%%', ax=ax2)
     ax2.set_ylabel("")
     st.pyplot(fig2)
+# Dự đoán
+suggestions, hits = [], []
+for i in range(len(data)):
+    if i == 0:
+        suggestions.append("—")
+        hits.append("⚪")
+        continue
+    sugg = vote_strategy(i, data, markov_prob)
+    actual = data.loc[i, "Nhóm"]
+    hit = "🟢" if actual in sugg else "🔴"
+    suggestions.append(sugg)
+    hits.append(hit)
+
+data["Gợi ý trước"] = suggestions
+data["Kết quả"] = hits
