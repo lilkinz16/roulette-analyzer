@@ -102,6 +102,11 @@ def vote_strategy(i, data, markov_prob):
     top_votes = vote_count.most_common(2)
     return " + ".join([v[0] for v in top_votes])
 
+# Tính điểm
+    vote_count = Counter(votes)
+    top_votes = vote_count.most_common(2)
+    return " + ".join([v[0] for v in top_votes])
+    
 # ==== Gợi ý theo phương pháp ====
 def vote_strategy(i):
     if i == 0:
