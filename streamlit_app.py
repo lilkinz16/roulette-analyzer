@@ -40,43 +40,6 @@ for from_g, targets in markov_matrix.items():
     total = sum(targets.values())
     markov_prob[from_g] = {to_g: round(count / total, 2) for to_g, count in targets.items()}
 
-# ==== Gợi ý ====
-def generate_suggestion(i, data, markov_prob, method="2️⃣"):
-    if i < 2:
-        return "—"
-
-    prev_1 = data.loc[i - 1, "Nhóm"]
-    prev_2 = data.loc[i - 2, "Nhóm"]
-    freq = data.loc[:i - 1, "Nhóm"].value_counts()
-    recent = data.loc[max(0, i - 10):i - 1, "Nhóm"]
-    markov_prev = prev_1
-    missing = [g for g in group_map if g not in recent.values]
-
-    if method == "2️⃣":
-        return f"{prev_1} + {missing[0]}" if missing else prev_1
-
-    elif method == "3️⃣":
-        return " + ".join(freq.sort_values().head(2).index)
-
-    elif method == "4️⃣":
-        if prev_1 == prev_2:
-            return prev_1
-        elif i >= 3 and prev_2 == data.loc[i - 3, "Nhóm"]:
-            return prev_2
-        else:
-            return prev_1
-
-    elif method == "🔟":
-        prob_dict = markov_prob.get(markov_prev, {})
-        if prob_dict:
-            best = max(prob_dict.items(), key=lambda x: x[1])[0]
-            return best
-        else:
-            return markov_prev
-
-    return prev_1
-
-method_select = st.selectbox("📌 Chọn phương pháp gợi ý:", ["2️⃣", "3️⃣", "4️⃣", "🔟"])
 
 # Tạo các cột kết quả
 suggestions = []
