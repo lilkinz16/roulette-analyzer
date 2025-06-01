@@ -194,7 +194,7 @@ st.subheader("📊 Tần suất cột C1/C2/C3")
 st.bar_chart(data["Cột"].value_counts())
 
 # Bảng chi tiết
-st.subheader("📋 Bảng chi tiết kết quả")
+st.subheader("📋 Bảng kết quả")
 st.dataframe(data)
 
 latest_group = data["Nhóm"].iloc[-1]
