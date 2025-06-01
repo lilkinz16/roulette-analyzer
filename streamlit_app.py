@@ -21,6 +21,18 @@ def find_group(num):
             return group
     return "?"
 
+def find_dozen(num):
+    if 1 <= num <= 12:
+        return "T1"
+    elif 13 <= num <= 24:
+        return "T2"
+    elif 25 <= num <= 36:
+        return "T3"
+    else:
+        return "T0"
+
+st.title("🎰 Phân Tích Roulette Nhóm A/B/C/D + Tá số (Dozen)")
+
 # ==== Nhập dữ liệu & chọn phương pháp ====
 results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "29,21,15,1,0,2,1")
 method = st.radio("🔍 Chọn cách gợi ý cược", [
@@ -31,11 +43,13 @@ method = st.radio("🔍 Chọn cách gợi ý cược", [
     "🔟 Markov Chain: xác suất chuyển nhóm",
     "🔬 Dự đoán bằng AI LSTM",
     "🧠 AI Voting: tổng hợp nhiều chiến lược"
+    "🧠 Voting kết hợp nhóm A/B/C/D + T1/T2/T3"
 ])
 
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 data = pd.DataFrame({"Số": numbers})
 data["Nhóm"] = data["Số"].apply(find_group)
+data["Tá nhóm"] = data["Số"].apply(find_dozen)
 data["Chu kỳ 5 tay"] = (data.index // 5) + 1
 
 # ==== Tính Markov nếu cần ====
@@ -48,6 +62,24 @@ for i in range(len(data) - 1):
 for from_g, targets in markov_matrix.items():
     total = sum(targets.values())
     markov_prob[from_g] = {to_g: round(count / total, 2) for to_g, count in targets.items()}
+
+# Hàm Voting mở rộng
+def vote_strategy(i, data, markov_prob):
+    if i == 0: return "—"
+    votes = []
+
+    prev = data.loc[i - 1, "Nhóm"]
+    prev_t = data.loc[i - 1, "Tá nhóm"]
+    freq = data.loc[:i - 1, "Nhóm"].value_counts()
+    t_freq = data.loc[:i - 1, "Tá nhóm"].value_counts()
+
+    least = freq.idxmin()
+    least_t = t_freq.idxmin()
+
+    if prev != least: votes += [prev, least]
+    else: votes += [prev]
+    if prev_t != least_t: votes += [prev_t, least_t]
+    else: votes += [prev_t]
 
 # ==== Gợi ý theo phương pháp ====
 def vote_strategy(i):
@@ -124,6 +156,13 @@ data["Kết quả"] = hits
 # ==== Hiển thị kết quả & thống kê ====
 st.subheader("🧾 Kết quả phân loại")
 st.dataframe(data)
+
+# Biểu đồ thống kê nhóm
+st.subheader("📊 Tần suất nhóm A/B/C/D")
+st.bar_chart(data["Nhóm"].value_counts())
+
+st.subheader("📊 Tần suất tá nhóm T1/T2/T3")
+st.bar_chart(data["Tá nhóm"].value_counts())
 
 # Bảng chi tiết
 st.subheader("📋 Bảng chi tiết kết quả")
