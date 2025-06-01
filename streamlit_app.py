@@ -20,6 +20,36 @@ def find_group(num):
         if num in nums:
             return g
     return "?"
+# Nhập số
+results = st.text_area("Nhập kết quả Roulette:", "0 6 15 33 22 19")
+numbers = [int(x) for x in re.findall(r'\d+', results)]
+data = pd.DataFrame({"Số": numbers})
+data["Nhóm"] = data["Số"].apply(find_group)
+
+# Tạo gợi ý cho tay kế tiếp
+next_predictions = ["—"] * len(data)
+for i in range(len(data) - 2):
+    g1 = data.loc[i, "Nhóm"]
+    g2 = data.loc[i + 1, "Nhóm"]
+    next_predictions[i + 2] = f"{g1}{g2}"
+
+data["Gợi ý tay kế tiếp"] = next_predictions
+
+# So sánh kết quả với gợi ý ở tay trước đó
+results = []
+for i in range(len(data)):
+    if i == 0 or i == 1:
+        results.append("⚪")
+    else:
+        pred = data.loc[i - 1, "Gợi ý tay kế tiếp"]
+        actual = data.loc[i, "Nhóm"]
+        results.append("🟢" if actual in pred else "🔴")
+
+data["Kết quả"] = results
+
+# Hiển thị bảng
+st.subheader("📋 Bảng kết quả dự đoán tay tiếp theo")
+st.dataframe(data.tail(100), use_container_width=True)
 
 # Input
 results = st.text_area("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", height=150)
