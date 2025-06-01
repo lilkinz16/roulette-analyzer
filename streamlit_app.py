@@ -152,7 +152,7 @@ else:
             prob_dict = markov_prob.get(prev, {})
             sugg = max(prob_dict.items(), key=lambda x: x[1])[0] if prob_dict else prev
         elif method.startswith("🧠"):
-            sugg = vote_strategy(i)
+            sugg = vote_strategy(i, data, markov_prob)
         else:
             sugg = prev
         suggestions.append(sugg)
