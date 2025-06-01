@@ -91,6 +91,18 @@ def vote_strategy(i, data, markov_prob):
     else: votes += [prev_t]
     if prev_c != least_c: votes += [prev_c, least_c]
     else: votes += [prev_c]
+    recent = data.loc[max(0, i - 10):i - 1, "Nhóm"]
+    missing = [g for g in group_map if g not in recent.values]
+    if missing:
+        votes.append(missing[0])
+
+    prob_dict = markov_prob.get(prev, {})
+    if prob_dict:
+        best = max(prob_dict.items(), key=lambda x: x[1])[0]
+        votes.append(best)
+
+    top = Counter(votes).most_common(1)[0][0]
+    return top
 
 # Markov
     prob_dict = markov_prob.get(prev, {})
