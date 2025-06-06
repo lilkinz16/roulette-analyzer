@@ -21,7 +21,7 @@ def find_group(num):
             return group
     return "?"
 
-results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "22 19 15 33 19")
+results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "0 16 17 18 19")
 
 # Parse numbers
 numbers = [int(x) for x in re.findall(r'\d+', results)]
