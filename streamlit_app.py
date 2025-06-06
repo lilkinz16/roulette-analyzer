@@ -48,6 +48,15 @@ st.dataframe(data, use_container_width=True)
 # ===== Bảng Cầu Baccarat-style theo nhóm =====
 st.subheader("🧮 Bảng Cầu Baccarat-style")
 
+# Định nghĩa màu cho từng nhóm
+group_colors = {
+    'A': "#F44336",  # đỏ
+    'B': "#2196F3",  # đỏ
+    'C': "#4CAF50",  # xanh lá
+    'D': "#FF9800",  # xanh lá
+    '?': "#9E9E9E"   # xám
+}
+
 columns = []
 col = []
 last = None
@@ -69,7 +78,8 @@ ax.axis('off')
 
 for x, col in enumerate(columns):
     for y, val in enumerate(col):
-        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color="#2196F3"))
+        color = group_colors.get(val, "#9E9E9E")
+        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
         ax.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
 
 plt.xlim(0, len(columns))
