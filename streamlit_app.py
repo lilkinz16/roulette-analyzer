@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import re
 from collections import Counter
 
-st.set_page_config(page_title="Phân Tích Roulette - Cầu Nhóm", layout="centered")
-st.title("🎯 Phân Tích Cầu Theo Nhóm Roulette")
+st.set_page_config(page_title="Phân Tích Roulette - Cầu Nhóm", layout="wide")
+st.title("🎯 Phân Tích Cầu Roulette Theo 2 Phương Pháp")
 
 # ===== Nhập nhóm động =====
-st.subheader("✏️ Thiết lập nhóm số Roulette")
+st.subheader("✏️ Thiết lập nhóm số Roulette (Phương pháp 1)")
 
 group_input = {
     'A': st.text_input("Nhóm A:", "0, 17"),
@@ -45,53 +45,21 @@ data = pd.DataFrame({
 st.subheader("📋 Kết quả nhóm")
 st.dataframe(data, use_container_width=True)
 
-# ===== Bảng Cầu Baccarat-style theo nhóm =====
-st.subheader("🧮 Bảng Cầu Baccarat-style")
-
-# Định nghĩa màu cho từng nhóm
-group_colors = {
-    'A': "#F44336",  # đỏ
-    'B': "#2196F3",  # đỏ
-    'C': "#4CAF50",  # xanh lá
-    'D': "#FF9800",  # xanh lá
-    '?': "#9E9E9E"   # xám
-}
-
-columns = []
-col = []
-last = None
-
-for group in groups:
-    if group == last:
-        col.append(group)
-    else:
-        if col:
-            columns.append(col)
-        col = [group]
-        last = group
-if col:
-    columns.append(col)
-
-max_len = max(len(c) for c in columns) if columns else 1
-fig, ax = plt.subplots(figsize=(len(columns), max_len))
-ax.axis('off')
-
-for x, col in enumerate(columns):
-    for y, val in enumerate(col):
-        color = group_colors.get(val, "#9E9E9E")
-        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
-        ax.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
-
-plt.xlim(0, len(columns))
-plt.ylim(-max_len, 1)
-plt.tight_layout()
-st.pyplot(fig)
-
+# ===== Hiển thị 2 bảng song song =====
 col1, col2 = st.columns(2)
 
-# ===== Cột 1: Bảng cầu theo group_input =====
+# ===== Cột 1: Phân tích theo nhóm người dùng nhập =====
 with col1:
-    st.subheader("📊 Phương pháp 1: Nhóm người dùng nhập")
+    st.subheader("📊 Phương pháp 1: Theo nhóm nhập")
+
+    # Màu cho nhóm
+    group_colors = {
+        'A': "#F44336",  # đỏ
+        'B': "#2196F3",  # xanh dương
+        'C': "#4CAF50",  # xanh lá
+        'D': "#FF9800",  # cam
+        '?': "#9E9E9E"   # xám
+    }
 
     columns = []
     col = []
@@ -123,7 +91,7 @@ with col1:
     plt.tight_layout()
     st.pyplot(fig1)
 
-# ===== Cột 2: Bảng cầu theo Chẵn / Lẻ =====
+# ===== Cột 2: Phân tích theo Chẵn / Lẻ =====
 with col2:
     st.subheader("📊 Phương pháp 2: Chẵn / Lẻ")
 
