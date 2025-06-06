@@ -3,22 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 
-st.set_page_config(page_title="Phân Tích Roulette - 3 Bảng Ngang", layout="wide")
-st.title("🎯 Phân Tích Cầu Roulette Theo 3 Phương Pháp Song Song")
+st.set_page_config(page_title="Phân Tích Roulette - 3 Bảng Có Chọn Kết Quả", layout="wide")
+st.title("🎯 Phân Tích Cầu Roulette - Chọn Số Cột Hiển Thị Mỗi Bảng")
 
 # ===== Nhập dãy số =====
-results = st.text_input("🎲 Nhập dãy số Roulette (phân cách bằng dấu cách hoặc phẩy):", "0 16 17 18 19 21 22 1 2 3")
+results = st.text_input("🎲 Nhập dãy số Roulette:", "0 16 17 18 19 21 22 1 2 3")
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 
-# ===== Số cột tối đa hiển thị cho mỗi bảng =====
-max_columns_to_show = 30
-
-# ===== Cấu hình 3 nhóm =====
-col1, col2, col3 = st.columns(3)
-
-# ==== Hàm vẽ bảng Baccarat-style ====
-def draw_baccarat_board(groups, group_colors, title):
-    # Tách cột cầu
+# ===== Hàm vẽ bảng Baccarat-style =====
+def draw_baccarat_board(groups, group_colors, max_columns):
+    # Tách chuỗi thành cột
     columns = []
     col_temp = []
     last = None
@@ -33,8 +27,8 @@ def draw_baccarat_board(groups, group_colors, title):
     if col_temp:
         columns.append(col_temp)
 
-    # Giới hạn số cột
-    columns = columns[-max_columns_to_show:]
+    # Lấy n cột gần nhất
+    columns = columns[-max_columns:]
 
     max_len = max(len(c) for c in columns) if columns else 1
     fig, ax = plt.subplots(figsize=(max(len(columns), 10), 6))
@@ -51,21 +45,23 @@ def draw_baccarat_board(groups, group_colors, title):
     plt.tight_layout()
     st.pyplot(fig)
 
+# ===== 3 cột bảng ngang =====
+col1, col2, col3 = st.columns(3)
+
 # ===== PHƯƠNG PHÁP 1 =====
 with col1:
     st.subheader("🅰️ Phương pháp 1")
 
+    num1 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num1")
+
     group_input_1 = {
         'A': st.text_input("P1 - Nhóm A:", "0, 17"),
         'B': st.text_input("P1 - Nhóm B:", "16, 18"),
-        'C': st.text_input("P1 - Nhóm C:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,19,20"),
+        'C': st.text_input("P1 - Nhóm C:", "1-15, 19, 20"),
         'D': st.text_input("P1 - Nhóm D:", "21-36"),
     }
 
-    group_map_1 = {
-        g: [int(x) for x in re.findall(r'\d+', v)]
-        for g, v in group_input_1.items()
-    }
+    group_map_1 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_1.items()}
 
     def find_group_1(n):
         for g, vals in group_map_1.items():
@@ -76,11 +72,13 @@ with col1:
     groups_1 = [find_group_1(n) for n in numbers]
 
     group_colors_1 = {'A': "#F44336", 'B': "#2196F3", 'C': "#4CAF50", 'D': "#FF9800", '?': "#9E9E9E"}
-    draw_baccarat_board(groups_1, group_colors_1, "Phương pháp 1")
+    draw_baccarat_board(groups_1, group_colors_1, num1)
 
 # ===== PHƯƠNG PHÁP 2 =====
 with col2:
     st.subheader("🅱️ Phương pháp 2")
+
+    num2 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num2")
 
     group_input_2 = {
         'A': st.text_input("P2 - Nhóm A:", "1, 3, 5, 7, 9"),
@@ -89,10 +87,7 @@ with col2:
         'D': st.text_input("P2 - Nhóm D:", "0,12,14,16,18,20"),
     }
 
-    group_map_2 = {
-        g: [int(x) for x in re.findall(r'\d+', v)]
-        for g, v in group_input_2.items()
-    }
+    group_map_2 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_2.items()}
 
     def find_group_2(n):
         for g, vals in group_map_2.items():
@@ -103,11 +98,13 @@ with col2:
     groups_2 = [find_group_2(n) for n in numbers]
 
     group_colors_2 = {'A': "#795548", 'B': "#03A9F4", 'C': "#8BC34A", 'D': "#FFC107", '?': "#BDBDBD"}
-    draw_baccarat_board(groups_2, group_colors_2, "Phương pháp 2")
+    draw_baccarat_board(groups_2, group_colors_2, num2)
 
 # ===== PHƯƠNG PHÁP 3 =====
 with col3:
     st.subheader("🆎 Phương pháp 3")
+
+    num3 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num3")
 
     group_input_3 = {
         'A': st.text_input("P3 - Nhóm A:", "0, 2, 4, 6, 8, 10, 12"),
@@ -116,10 +113,7 @@ with col3:
         'D': st.text_input("P3 - Nhóm D:", "21-36"),
     }
 
-    group_map_3 = {
-        g: [int(x) for x in re.findall(r'\d+', v)]
-        for g, v in group_input_3.items()
-    }
+    group_map_3 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_3.items()}
 
     def find_group_3(n):
         for g, vals in group_map_3.items():
@@ -130,4 +124,4 @@ with col3:
     groups_3 = [find_group_3(n) for n in numbers]
 
     group_colors_3 = {'A': "#E91E63", 'B': "#00BCD4", 'C': "#CDDC39", 'D': "#FF5722", '?': "#BDBDBD"}
-    draw_baccarat_board(groups_3, group_colors_3, "Phương pháp 3")
+    draw_baccarat_board(groups_3, group_colors_3, num3)
