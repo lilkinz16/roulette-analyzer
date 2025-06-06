@@ -86,3 +86,77 @@ plt.xlim(0, len(columns))
 plt.ylim(-max_len, 1)
 plt.tight_layout()
 st.pyplot(fig)
+
+col1, col2 = st.columns(2)
+
+# ===== Cột 1: Bảng cầu theo group_input =====
+with col1:
+    st.subheader("📊 Phương pháp 1: Nhóm người dùng nhập")
+
+    columns = []
+    col = []
+    last = None
+
+    for group in groups:
+        if group == last:
+            col.append(group)
+        else:
+            if col:
+                columns.append(col)
+            col = [group]
+            last = group
+    if col:
+        columns.append(col)
+
+    max_len = max(len(c) for c in columns) if columns else 1
+    fig1, ax1 = plt.subplots(figsize=(len(columns), max_len))
+    ax1.axis('off')
+
+    for x, col in enumerate(columns):
+        for y, val in enumerate(col):
+            color = group_colors.get(val, "#9E9E9E")
+            ax1.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
+            ax1.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
+
+    plt.xlim(0, len(columns))
+    plt.ylim(-max_len, 1)
+    plt.tight_layout()
+    st.pyplot(fig1)
+
+# ===== Cột 2: Bảng cầu theo Chẵn / Lẻ =====
+with col2:
+    st.subheader("📊 Phương pháp 2: Chẵn / Lẻ")
+
+    even_odd = ['Chẵn' if n % 2 == 0 else 'Lẻ' for n in numbers]
+
+    columns2 = []
+    col2 = []
+    last2 = None
+
+    for val in even_odd:
+        if val == last2:
+            col2.append(val)
+        else:
+            if col2:
+                columns2.append(col2)
+            col2 = [val]
+            last2 = val
+    if col2:
+        columns2.append(col2)
+
+    max_len2 = max(len(c) for c in columns2) if columns2 else 1
+    fig2, ax2 = plt.subplots(figsize=(len(columns2), max_len2))
+    ax2.axis('off')
+
+    color_map2 = {'Chẵn': "#3F51B5", 'Lẻ': "#E91E63"}
+
+    for x, col in enumerate(columns2):
+        for y, val in enumerate(col):
+            color = color_map2.get(val, "#9E9E9E")
+            ax2.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
+            ax2.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
+
+    plt.xlim(0, len(columns2))
+    plt.ylim(-max_len2, 1)
+    plt.tight_layout()
+    st.pyplot(fig2)
