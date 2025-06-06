@@ -1,78 +1,65 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
 from collections import Counter
 
-st.set_page_config(page_title="Phân Tích Roulette - Gợi ý tay tiếp theo", layout="centered")
-st.title("🎯 Phân Tích Gợi Ý Theo 2 Tay Trước")
+st.set_page_config(page_title="Phân Tích Roulette - Cầu Nhóm", layout="centered")
+st.title("🎯 Phân Tích Cầu Theo Nhóm Roulette")
 
-group_map = {
-    'A': [0, 17],
-    'B': [16, 18],
-    'C': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 19, 20,],
-    'D': [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36],
+# ===== Nhập nhóm động =====
+st.subheader("✏️ Thiết lập nhóm số Roulette")
+
+group_input = {
+    'A': st.text_input("Nhóm A:", "0, 17"),
+    'B': st.text_input("Nhóm B:", "16, 18"),
+    'C': st.text_input("Nhóm C:", "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 19, 20"),
+    'D': st.text_input("Nhóm D:", "21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36"),
 }
 
+# Parse thành dict group_map
+group_map = {
+    group: [int(x.strip()) for x in re.findall(r'\d+', val)]
+    for group, val in group_input.items()
+}
+
+# ===== Hàm phân nhóm =====
 def find_group(num):
     for group, numbers in group_map.items():
         if num in numbers:
             return group
     return "?"
 
-results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "0 16 17 18 19")
-
-# Parse numbers
+# ===== Nhập kết quả roulette =====
+results = st.text_input("🎲 Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "0 16 17 18 19")
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 groups = [find_group(n) for n in numbers]
 
-# Prepare dataframe
+# ===== Bảng phân tích =====
 data = pd.DataFrame({
     "Tay": list(range(1, len(numbers) + 1)),
     "Số": numbers,
     "Nhóm": groups
 })
 
-# Generate suggestions for next round
-suggestions = ["—", "—"]
-for i in range(2, len(groups)):
-    pair = groups[i-2] + groups[i-1]
-    suggestions.append(pair)
-data["Gợi ý từ 2 tay trước"] = suggestions
+st.subheader("📋 Kết quả nhóm")
+st.dataframe(data, use_container_width=True)
 
-# Generate result comparison
-hits = ["⚪", "⚪"]
-for i in range(2, len(groups)):
-    suggestion = suggestions[i]
-    actual = groups[i]
-    hits.append("🟢" if actual in suggestion else "🔴")
-data["Kết quả"] = hits
-
-# Show table
-st.dataframe(data)
-
-# Show suggestion for next (n+1) hand
-if len(groups) >= 2:
-    next_suggestion = groups[-2] + groups[-1]
-    st.markdown(f"🔮 **Gợi ý tay tiếp theo (tay {len(groups)+1}): `{next_suggestion}`**")
-
-# === Bảng Baccarat-style hiển thị kết quả đúng/sai ===
+# ===== Bảng Cầu Baccarat-style theo nhóm =====
 st.subheader("🧮 Bảng Cầu Baccarat-style")
 
-results_seq = data["Kết quả"].tolist()
 columns = []
 col = []
 last = None
 
-for r in results_seq:
-    if r == last:
-        col.append(r)
+for group in groups:
+    if group == last:
+        col.append(group)
     else:
         if col:
             columns.append(col)
-        col = [r]
-        last = r
+        col = [group]
+        last = group
 if col:
     columns.append(col)
 
@@ -82,8 +69,7 @@ ax.axis('off')
 
 for x, col in enumerate(columns):
     for y, val in enumerate(col):
-        color = "#4CAF50" if val == '🟢' else "#F44336"
-        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
+        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color="#2196F3"))
         ax.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
 
 plt.xlim(0, len(columns))
