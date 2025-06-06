@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
-from collections import Counter
 
 st.set_page_config(page_title="Phân Tích Roulette - Cầu Nhóm", layout="wide")
 st.title("🎯 Phân Tích Cầu Roulette Theo 2 Phương Pháp")
 
-# ===== Nhập nhóm động =====
+# ===== Nhập nhóm động (cho phương pháp 1) =====
 st.subheader("✏️ Thiết lập nhóm số Roulette (Phương pháp 1)")
 
 group_input = {
@@ -17,13 +16,13 @@ group_input = {
     'D': st.text_input("Nhóm D:", "21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36"),
 }
 
-# Parse thành dict group_map
+# Parse input thành dict group_map
 group_map = {
     group: [int(x.strip()) for x in re.findall(r'\d+', val)]
     for group, val in group_input.items()
 }
 
-# ===== Hàm phân nhóm =====
+# ===== Hàm xác định nhóm =====
 def find_group(num):
     for group, numbers in group_map.items():
         if num in numbers:
@@ -35,7 +34,7 @@ results = st.text_input("🎲 Nhập dãy số Roulette (cách nhau bởi dấu 
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 groups = [find_group(n) for n in numbers]
 
-# ===== Bảng phân tích =====
+# ===== Bảng kết quả nhóm =====
 data = pd.DataFrame({
     "Tay": list(range(1, len(numbers) + 1)),
     "Số": numbers,
@@ -45,20 +44,20 @@ data = pd.DataFrame({
 st.subheader("📋 Kết quả nhóm")
 st.dataframe(data, use_container_width=True)
 
-# ===== Hiển thị 2 bảng song song =====
+# ===== Chia giao diện 2 cột =====
 col1, col2 = st.columns(2)
 
-# ===== Cột 1: Phân tích theo nhóm người dùng nhập =====
+# ===== CỘT 1: Theo nhóm người dùng nhập =====
 with col1:
     st.subheader("📊 Phương pháp 1: Theo nhóm nhập")
 
-    # Màu cho nhóm
+    # Màu theo nhóm
     group_colors = {
-        'A': "#F44336",  # đỏ
-        'B': "#2196F3",  # xanh dương
-        'C': "#4CAF50",  # xanh lá
-        'D': "#FF9800",  # cam
-        '?': "#9E9E9E"   # xám
+        'A': "#F44336",
+        'B': "#2196F3",
+        'C': "#4CAF50",
+        'D': "#FF9800",
+        '?': "#9E9E9E"
     }
 
     columns = []
@@ -91,7 +90,7 @@ with col1:
     plt.tight_layout()
     st.pyplot(fig1)
 
-# ===== Cột 2: Phân tích theo Chẵn / Lẻ =====
+# ===== CỘT 2: Theo Chẵn / Lẻ =====
 with col2:
     st.subheader("📊 Phương pháp 2: Chẵn / Lẻ")
 
