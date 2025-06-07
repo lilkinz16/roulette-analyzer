@@ -58,7 +58,7 @@ with col1:
         'A': st.text_input("P1 - Nhóm A:", "0, 17"),
         'B': st.text_input("P1 - Nhóm B:", "16, 18"),
         'C': st.text_input("P1 - Nhóm C:", "1-15, 19, 20"),
-        'D': st.text_input("P1 - Nhóm D:", "21-36"),
+        'D': st.text_input("P1 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
     }
 
     group_map_1 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_1.items()}
