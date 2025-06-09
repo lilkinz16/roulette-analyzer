@@ -55,7 +55,7 @@ with col1:
     num1 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num1")
 
     group_input_1 = {
-        'A': st.text_input("P1 - Nhóm A:", "0, 17"),
+        'A': st.text_input("P1 - Nhóm A:", "0, 17, 16, 18"),
         'B': st.text_input("P1 - Nhóm B:", "16, 18"),
         'C': st.text_input("P1 - Nhóm C:", "1-15, 19, 20"),
         'D': st.text_input("P1 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
@@ -81,10 +81,10 @@ with col2:
     num2 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num2")
 
     group_input_2 = {
-        'A': st.text_input("P2 - Nhóm A:", "1, 3, 5, 7, 9"),
-        'B': st.text_input("P2 - Nhóm B:", "2, 4, 6, 8, 10"),
-        'C': st.text_input("P2 - Nhóm C:", "11,13,15,17,19"),
-        'D': st.text_input("P2 - Nhóm D:", "0,12,14,16,18,20"),
+        'A': st.text_input("P2 - Nhóm A:", "1, 3, 2, 0, 34, 35, 36"),
+        'B': st.text_input("P2 - Nhóm B:", "2"),
+        'C': st.text_input("P2 - Nhóm C:", "11"),
+        'D': st.text_input("P2 - Nhóm D:", "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33"),
     }
 
     group_map_2 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_2.items()}
@@ -107,10 +107,10 @@ with col3:
     num3 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num3")
 
     group_input_3 = {
-        'A': st.text_input("P3 - Nhóm A:", "0, 2, 4, 6, 8, 10, 12"),
-        'B': st.text_input("P3 - Nhóm B:", "1, 3, 5, 7, 9, 11, 13"),
-        'C': st.text_input("P3 - Nhóm C:", "14,15,16,17,18,19,20"),
-        'D': st.text_input("P3 - Nhóm D:", "21-36"),
+        'A': st.text_input("P3 - Nhóm A:", "0, 19, 20, 21"),
+        'B': st.text_input("P3 - Nhóm B:", "1"),
+        'C': st.text_input("P3 - Nhóm C:", "14"),
+        'D': st.text_input("P3 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
     }
 
     group_map_3 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_3.items()}
