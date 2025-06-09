@@ -82,8 +82,8 @@ with col2:
 
     group_input_2 = {
         'A': st.text_input("P2 - Nhóm A:", "1, 3, 2, 0, 34, 35, 36"),
-        'B': st.text_input("P2 - Nhóm B:", "2"),
-        'C': st.text_input("P2 - Nhóm C:", "11"),
+        'B': st.text_input("P2 - Nhóm B:", "2,4"),
+        'C': st.text_input("P2 - Nhóm C:", "11,3"),
         'D': st.text_input("P2 - Nhóm D:", "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33"),
     }
 
@@ -108,8 +108,8 @@ with col3:
 
     group_input_3 = {
         'A': st.text_input("P3 - Nhóm A:", "0, 19, 20, 21"),
-        'B': st.text_input("P3 - Nhóm B:", "1"),
-        'C': st.text_input("P3 - Nhóm C:", "14"),
+        'B': st.text_input("P3 - Nhóm B:", "1,10"),
+        'C': st.text_input("P3 - Nhóm C:", "14,11"),
         'D': st.text_input("P3 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
     }
 
