@@ -1,106 +1,24 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import re
-from collections import Counter
+# Xác định nhóm để vẽ cầu Baccarat
+# Bạn có thể thay đổi tùy theo chiến thuật (ví dụ: A vs B, hoặc A+C vs B+D,...)
+def map_baccarat_symbol(group):
+    if group == "A":
+        return "🟥"  # Player
+    elif group == "B":
+        return "🟦"  # Banker
+    else:
+        return None  # Không vẽ
 
-st.set_page_config(page_title="Phân Tích Roulette - Gợi ý tay tiếp theo", layout="centered")
-st.title("🎯 Phân Tích Gợi Ý Theo 2 Tay Trước")
+# Tạo dãy kết quả cho cầu
+baccarat_seq = list(filter(None, [map_baccarat_symbol(g) for g in groups]))
 
-group_map = {
-    'A': [0, 1, 6, 9, 18, 21, 28, 31, 36],
-    'B': [2, 3, 5, 8, 17, 20, 29, 32, 24, 27],
-    'C': [4, 7, 10, 13, 16, 19, 30, 33],
-    'D': [12, 15, 11, 14, 22, 25, 28, 34, 35],
-}
+# Vẽ cầu Baccarat-style
+st.subheader("🧮 Cầu Baccarat theo nhóm A (🟥) và B (🟦)")
 
-def find_group(num):
-    for group, numbers in group_map.items():
-        if num in numbers:
-            return group
-    return "?"
-
-results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách hoặc phẩy):", "22 19 15 33 19")
-
-# Parse numbers
-numbers = [int(x) for x in re.findall(r'\d+', results)]
-groups = [find_group(n) for n in numbers]
-
-# Cảnh báo nếu có số không thuộc nhóm nào
-invalid_nums = [n for n, g in zip(numbers, groups) if g == "?"]
-if invalid_nums:
-    st.warning(f"Các số sau không thuộc nhóm nào: {invalid_nums}")
-
-# Prepare dataframe
-data = pd.DataFrame({
-    "Tay": list(range(1, len(numbers) + 1)),
-    "Số": numbers,
-    "Nhóm": groups
-})
-
-# Generate suggestions
-suggestions = ["—", "—"]
-for i in range(2, len(groups)):
-    pair = groups[i-2] + groups[i-1]
-    suggestions.append(pair)
-data["Gợi ý từ 2 tay trước"] = suggestions
-
-# Generate result comparison
-hits = ["⚪", "⚪"]
-for i in range(2, len(groups)):
-    suggestion = suggestions[i]
-    actual = groups[i]
-    hits.append("🟢" if actual in suggestion else "🔴")
-data["Kết quả"] = hits
-
-# Gợi ý tiếp theo
-if len(groups) >= 2:
-    next_suggestion = groups[-2] + groups[-1]
-    st.markdown(f"🔮 **Gợi ý tay tiếp theo (tay {len(groups)+1}): `{next_suggestion}`**")
-
-# Tính % chính xác
-total_checked = sum(x in ["🟢", "🔴"] for x in hits)
-correct = hits.count("🟢")
-accuracy = correct / total_checked * 100 if total_checked > 0 else 0
-st.markdown(f"📊 **Tỷ lệ gợi ý đúng: `{accuracy:.2f}%`** ({correct}/{total_checked})")
-
-# Lọc chuỗi thắng/thua liên tục
-def get_streaks(hits_list, symbol):
-    max_streak = 0
-    current = 0
-    streaks = []
-    for h in hits_list:
-        if h == symbol:
-            current += 1
-        else:
-            if current > 0:
-                streaks.append(current)
-                max_streak = max(max_streak, current)
-            current = 0
-    if current > 0:
-        streaks.append(current)
-        max_streak = max(max_streak, current)
-    return max_streak, streaks[-1] if streaks else 0
-
-max_win, current_win = get_streaks(hits, "🟢")
-max_lose, current_lose = get_streaks(hits, "🔴")
-
-st.markdown(f"🟢 **Chuỗi thắng dài nhất:** {max_win} | **Hiện tại:** {current_win}")
-st.markdown(f"🔴 **Chuỗi thua dài nhất:** {max_lose} | **Hiện tại:** {current_lose}")
-
-# Hiển thị bảng
-st.subheader("📋 Bảng Phân Tích")
-st.dataframe(data)
-
-# Bảng Cầu Baccarat-style
-st.subheader("🧮 Bảng Cầu Baccarat-style")
-
-results_seq = data["Kết quả"].tolist()
 columns = []
 col = []
 last = None
 
-for r in results_seq:
+for r in baccarat_seq:
     if r == last:
         col.append(r)
     else:
@@ -117,7 +35,7 @@ ax.axis('off')
 
 for x, col in enumerate(columns):
     for y, val in enumerate(col):
-        color = "#4CAF50" if val == '🟢' else "#F44336"
+        color = "#4CAF50" if val == '🟥' else "#2196F3"
         ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
         ax.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
 
