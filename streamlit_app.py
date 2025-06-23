@@ -1,13 +1,14 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Baccarat Cầu Chuẩn", layout="wide")
+st.set_page_config(page_title="Baccarat Cầu 4 Loại", layout="wide")
 st.title("🎯 Bảng Cầu Baccarat: Big Road, Big Eye Boy, Small Road, Cockroach Pig")
 
-# === Session State ===
+# Session state
 if "result_sequence" not in st.session_state:
     st.session_state.result_sequence = []
 
+# Nút bấm
 col1, col2, col3 = st.columns([1, 1, 1])
 with col1:
     if st.button("🔴 Đặt ĐỎ"):
@@ -20,33 +21,33 @@ with col3:
         st.session_state.result_sequence = []
 
 if not st.session_state.result_sequence:
-    st.info("👉 Bấm ĐỎ hoặc XANH để bắt đầu.")
+    st.info("👉 Bấm để bắt đầu đặt tay")
     st.stop()
 
-# === Build Big Road ===
+# ==== 1. Tạo Big Road ====
 MAX_ROW = 6
-grid = {}
+big_grid = {}
 x, y = 0, 0
 last = None
 
 for symbol in st.session_state.result_sequence:
     if symbol == last:
-        if (x, y + 1) not in grid and y + 1 < MAX_ROW:
+        if (x, y + 1) not in big_grid and y + 1 < MAX_ROW:
             y += 1
         else:
             x += 1
-            while (x, 0) in grid:
+            while (x, 0) in big_grid:
                 x += 1
             y = 0
     else:
         x += 1
-        while (x, 0) in grid:
+        while (x, 0) in big_grid:
             x += 1
         y = 0
-    grid[(x, y)] = symbol
+    big_grid[(x, y)] = symbol
     last = symbol
 
-# === Build helper logic for 3 derived roads ===
+# ==== 2. Hàm logic cầu phụ ====
 def get_color_by_shape(x, y, ref_x1, ref_x2, grid):
     a = (ref_x1, y) in grid
     b = (ref_x2, y) in grid
@@ -57,28 +58,51 @@ def get_color_by_shape(x, y, ref_x1, ref_x2, grid):
     else:
         return None
 
-def build_pattern_road(start_col, offset1, offset2):
-    res = {}
+def get_shape_sequence(start_col, offset1, offset2, grid):
+    result = []
     max_col = max(i[0] for i in grid)
     for x in range(start_col, max_col + 1):
         color = get_color_by_shape(x, 0, x - offset1, x - offset2, grid)
         if color:
-            res[(x - offset1, 0)] = color
-    return res
+            result.append(color)
+    return result
 
-big_eye = build_pattern_road(2, 1, 2)
-small_road = build_pattern_road(3, 2, 3)
-cockroach = build_pattern_road(4, 2, 4)
+def build_vertical_grid(symbol_list):
+    grid = {}
+    x, y = 0, 0
+    last = None
+    for symbol in symbol_list:
+        if symbol == last:
+            if (x, y + 1) not in grid and y + 1 < MAX_ROW:
+                y += 1
+            else:
+                x += 1
+                y = 0
+        else:
+            x += 1
+            y = 0
+        grid[(x, y)] = symbol
+        last = symbol
+    return grid
 
+# ==== 3. Tạo các bảng phụ ====
+big_eye_seq = get_shape_sequence(2, 1, 2, big_grid)
+small_seq = get_shape_sequence(3, 2, 3, big_grid)
+cock_seq = get_shape_sequence(4, 2, 4, big_grid)
+
+big_eye = build_vertical_grid(big_eye_seq)
+small_road = build_vertical_grid(small_seq)
+cockroach = build_vertical_grid(cock_seq)
+
+# ==== 4. Vẽ bảng ====
+colors_map = {"🟥": "#E53935", "🟦": "#1E88E5", "🔴": "#E53935", "🔵": "#1E88E5"}
 grids = {
-    "Big Road": grid,
+    "Big Road": big_grid,
     "Big Eye Boy": big_eye,
     "Small Road": small_road,
     "Cockroach Pig": cockroach
 }
 
-# === Vẽ 4 bảng ===
-colors_map = {"🟥": "#E53935", "🟦": "#1E88E5", "🔴": "#E53935", "🔵": "#1E88E5"}
 cols = st.columns(4)
 
 for idx, (name, g) in enumerate(grids.items()):
