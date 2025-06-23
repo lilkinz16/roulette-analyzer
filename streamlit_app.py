@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,8 +9,8 @@ st.title("🎯 Phân Tích Gợi Ý Theo 2 Tay Trước")
 
 group_map = {
     'A': [0, 1, 6, 9, 18, 21, 28, 31, 36],
-    'B': [2, 3, 5, 8, 17, 20, 29, 32, 24,27],
-    'C': [4, 7, 10, 13, 16, 19, 30, 33, ],
+    'B': [2, 3, 5, 8, 17, 20, 29, 32, 24, 27],
+    'C': [4, 7, 10, 13, 16, 19, 30, 33],
     'D': [12, 15, 11, 14, 22, 25, 28, 34, 35],
 }
 
@@ -27,6 +26,11 @@ results = st.text_input("Nhập dãy số Roulette (cách nhau bởi dấu cách
 numbers = [int(x) for x in re.findall(r'\d+', results)]
 groups = [find_group(n) for n in numbers]
 
+# Cảnh báo nếu có số không thuộc nhóm nào
+invalid_nums = [n for n, g in zip(numbers, groups) if g == "?"]
+if invalid_nums:
+    st.warning(f"Các số sau không thuộc nhóm nào: {invalid_nums}")
+
 # Prepare dataframe
 data = pd.DataFrame({
     "Tay": list(range(1, len(numbers) + 1)),
@@ -34,7 +38,7 @@ data = pd.DataFrame({
     "Nhóm": groups
 })
 
-# Generate suggestions for next round
+# Generate suggestions
 suggestions = ["—", "—"]
 for i in range(2, len(groups)):
     pair = groups[i-2] + groups[i-1]
@@ -49,13 +53,46 @@ for i in range(2, len(groups)):
     hits.append("🟢" if actual in suggestion else "🔴")
 data["Kết quả"] = hits
 
-
-# Show suggestion for next (n+1) hand
+# Gợi ý tiếp theo
 if len(groups) >= 2:
     next_suggestion = groups[-2] + groups[-1]
     st.markdown(f"🔮 **Gợi ý tay tiếp theo (tay {len(groups)+1}): `{next_suggestion}`**")
 
-# === Bảng Baccarat-style hiển thị kết quả đúng/sai ===
+# Tính % chính xác
+total_checked = sum(x in ["🟢", "🔴"] for x in hits)
+correct = hits.count("🟢")
+accuracy = correct / total_checked * 100 if total_checked > 0 else 0
+st.markdown(f"📊 **Tỷ lệ gợi ý đúng: `{accuracy:.2f}%`** ({correct}/{total_checked})")
+
+# Lọc chuỗi thắng/thua liên tục
+def get_streaks(hits_list, symbol):
+    max_streak = 0
+    current = 0
+    streaks = []
+    for h in hits_list:
+        if h == symbol:
+            current += 1
+        else:
+            if current > 0:
+                streaks.append(current)
+                max_streak = max(max_streak, current)
+            current = 0
+    if current > 0:
+        streaks.append(current)
+        max_streak = max(max_streak, current)
+    return max_streak, streaks[-1] if streaks else 0
+
+max_win, current_win = get_streaks(hits, "🟢")
+max_lose, current_lose = get_streaks(hits, "🔴")
+
+st.markdown(f"🟢 **Chuỗi thắng dài nhất:** {max_win} | **Hiện tại:** {current_win}")
+st.markdown(f"🔴 **Chuỗi thua dài nhất:** {max_lose} | **Hiện tại:** {current_lose}")
+
+# Hiển thị bảng
+st.subheader("📋 Bảng Phân Tích")
+st.dataframe(data)
+
+# Bảng Cầu Baccarat-style
 st.subheader("🧮 Bảng Cầu Baccarat-style")
 
 results_seq = data["Kết quả"].tolist()
