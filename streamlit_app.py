@@ -1,10 +1,11 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Bảng Cầu Baccarat Thủ Công", layout="centered")
-st.title("🎯 Bảng Cầu Baccarat Thủ Công (Chạm Đỏ/Xanh)")
+# Cấu hình giao diện
+st.set_page_config(page_title="Bảng Cầu Baccarat 4 loại", layout="wide")
+st.title("🎯 Bảng Cầu Baccarat: Big Road, Big Eye Boy, Small Road, Cockroach Pig")
 
-# Khởi tạo session_state nếu chưa có
+# Khởi tạo kết quả người dùng chọn
 if "result_sequence" not in st.session_state:
     st.session_state.result_sequence = []
 
@@ -20,42 +21,82 @@ with col3:
     if st.button("♻️ Reset"):
         st.session_state.result_sequence = []
 
-# Hiển thị dãy kết quả
+# Không làm gì nếu chuỗi rỗng
 if not st.session_state.result_sequence:
-    st.info("👉 Bấm vào nút ĐỎ hoặc XANH để tạo bảng cầu Baccarat.")
-else:
-    st.markdown(f"🧾 **Dãy hiện tại:** {' '.join(st.session_state.result_sequence)}")
+    st.info("👉 Bấm ĐỎ hoặc XANH để bắt đầu tạo bảng cầu.")
+    st.stop()
 
-    # ==== Xử lý logic bảng cầu ====
-    MAX_ROW = 6  # Giới hạn số hàng như Baccarat thật
+# ==== 1. Xây Big Road ====
+MAX_ROW = 6
+grid = {}
+x, y = 0, 0
+last = None
 
-    grid = {}     # {(x, y): symbol}
-    x, y = 0, 0
-    last = None
-
-    for symbol in st.session_state.result_sequence:
-        if symbol == last:
-            if y < MAX_ROW - 1 and (x, y + 1) not in grid:
-                y += 1
-            else:
-                x += 1
-                y = 0
+for symbol in st.session_state.result_sequence:
+    if symbol == last:
+        if y < MAX_ROW - 1 and (x, y + 1) not in grid:
+            y += 1
         else:
             x += 1
             y = 0
-        grid[(x, y)] = symbol
-        last = symbol
+    else:
+        x += 1
+        y = 0
+    grid[(x, y)] = symbol
+    last = symbol
 
-    # ==== Vẽ bảng ====
-    fig, ax = plt.subplots(figsize=(max(x + 2, 6), MAX_ROW))
-    ax.axis('off')
+# Lấy chiều cao cột
+col_heights = {}
+for (cx, cy) in grid:
+    col_heights[cx] = max(col_heights.get(cx, 0), cy + 1)
 
-    for (x, y), val in grid.items():
-        color = "#E53935" if val == '🟥' else "#1E88E5"
-        ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
-        ax.text(x + 0.5, -y + 0.5, val, va='center', ha='center', fontsize=16, color='white')
+# ==== 2. Tính các bảng phụ (logic giống thật) ====
+def gen_big_eye(col_heights):
+    big_eye = {}
+    for col in range(2, max(col_heights.keys()) + 1):
+        same = col_heights.get(col - 1, 0) == col_heights.get(col - 2, 0)
+        color = "🔵" if same else "🔴"
+        big_eye[(col - 1, 0)] = color
+    return big_eye
 
-    plt.xlim(0, x + 2)
-    plt.ylim(-MAX_ROW, 1)
-    plt.tight_layout()
-    st.pyplot(fig)
+def gen_small_road(col_heights):
+    small = {}
+    for col in range(3, max(col_heights.keys()) + 1):
+        same = col_heights.get(col - 2, 0) == col_heights.get(col - 3, 0)
+        color = "🔵" if same else "🔴"
+        small[(col - 2, 0)] = color
+    return small
+
+def gen_cockroach(col_heights):
+    cock = {}
+    for col in range(4, max(col_heights.keys()) + 1):
+        same = col_heights.get(col - 2, 0) == col_heights.get(col - 4, 0)
+        color = "🔵" if same else "🔴"
+        cock[(col - 2, 0)] = color
+    return cock
+
+# Các bảng cầu
+grids = {
+    "Big Road": grid,
+    "Big Eye Boy": gen_big_eye(col_heights),
+    "Small Road": gen_small_road(col_heights),
+    "Cockroach Pig": gen_cockroach(col_heights)
+}
+
+# ==== 3. Vẽ 4 bảng ====
+cols = st.columns(4)
+colors_map = {"🟥": "#E53935", "🟦": "#1E88E5", "🔴": "#E53935", "🔵": "#1E88E5"}
+
+for idx, (name, g) in enumerate(grids.items()):
+    with cols[idx]:
+        st.markdown(f"### {name}")
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.axis("off")
+        for (x, y), val in g.items():
+            color = colors_map.get(val, "#999999")
+            ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
+            ax.text(x + 0.5, -y + 0.5, val, ha="center", va="center", fontsize=16, color="white")
+        max_x = max((x for x, _ in g), default=1) + 1
+        ax.set_xlim(0, max_x)
+        ax.set_ylim(-6, 1)
+        st.pyplot(fig)
