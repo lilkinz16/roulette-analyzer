@@ -1,16 +1,16 @@
 import streamlit as st
+import pandas as pd
 import matplotlib.pyplot as plt
 import re
 
-st.set_page_config(page_title="Phân Tích Baccarat - 3 Bảng Cầu", layout="wide")
-st.title("🎯 Phân Tích Cầu Baccarat - Nhập BPB, cấu hình nhóm, 3 bảng độc lập")
+st.set_page_config(page_title="Phân Tích Cầu Xổ Số - 3 Bảng Có Chọn Kết Quả", layout="wide")
+st.title("🎯 Phân Tích Cầu Xổ Số (00-99) - Chọn Số Cột Hiển Thị Mỗi Bảng")
 
-# === Nhập kết quả kiểu BPBPPB ===
-results_input = st.text_input("🎲 Nhập chuỗi kết quả (B = Đỏ, P = Xanh):", "BPBPPBBP")
-symbol_map = {'B': 0, 'P': 1}
-numbers = [symbol_map.get(char.upper(), -1) for char in results_input if char.upper() in symbol_map]
+# ===== Nhập dãy số =====
+results = st.text_input("🎲 Nhập dãy số (cách nhau bằng khoảng trắng hoặc dấu phẩy):", "00 12 34 56 78 99")
+numbers = [int(x) for x in re.findall(r'\d{2}', results)]
 
-# === Hàm vẽ Big Road ===
+# ===== Hàm vẽ bảng Baccarat-style =====
 def draw_baccarat_board(groups, group_colors, max_columns):
     columns = []
     col_temp = []
@@ -43,71 +43,77 @@ def draw_baccarat_board(groups, group_colors, max_columns):
     plt.tight_layout()
     st.pyplot(fig)
 
-# === Hàm xử lý từng phương pháp ===
-def handle_strategy(col, name, default_group_map, group_colors, key_prefix):
-    with col:
-        st.subheader(f"🧠 Phương pháp {name}")
-        num = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key=f"{key_prefix}_num")
-
-        group_input = {
-            'A': st.text_input(f"P{name} - Nhóm A:", default_group_map['A'], key=f"{key_prefix}_A"),
-            'B': st.text_input(f"P{name} - Nhóm B:", default_group_map['B'], key=f"{key_prefix}_B"),
-            'C': st.text_input(f"P{name} - Nhóm C:", default_group_map['C'], key=f"{key_prefix}_C"),
-            'D': st.text_input(f"P{name} - Nhóm D:", default_group_map['D'], key=f"{key_prefix}_D"),
-        }
-
-        group_map = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input.items()}
-
-        def find_group(n):
-            for g, vals in group_map.items():
-                if n in vals:
-                    return g
-            return "?"
-
-        groups = [find_group(n) for n in numbers]
-        draw_baccarat_board(groups, group_colors, num)
-
-# === Bố cục 3 bảng ===
+# ===== Tạo 3 bảng ngang =====
 col1, col2, col3 = st.columns(3)
 
-# PHƯƠNG PHÁP 1
-handle_strategy(
-    col1,
-    name="1",
-    default_group_map={
-        'A': "0,1,2",
-        'B': "3,4,5",
-        'C': "6,7,8",
-        'D': "9,10,11"
-    },
-    group_colors={'A': "#F44336", 'B': "#2196F3", 'C': "#4CAF50", 'D': "#FF9800", '?': "#9E9E9E"},
-    key_prefix="pp1"
-)
+# ===== PHƯƠNG PHÁP 1 =====
+with col1:
+    st.subheader("🅰️ Phương pháp 1")
+    num1 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num1")
 
-# PHƯƠNG PHÁP 2
-handle_strategy(
-    col2,
-    name="2",
-    default_group_map={
-        'A': "0,2,4,6",
-        'B': "1,3,5",
-        'C': "7,8,9",
-        'D': "10,11,12"
-    },
-    group_colors={'A': "#795548", 'B': "#03A9F4", 'C': "#8BC34A", 'D': "#FFC107", '?': "#BDBDBD"},
-    key_prefix="pp2"
-)
+    group_input_1 = {
+        'A': st.text_input("P1 - Nhóm A:", "00,01,02,03,04"),
+        'B': st.text_input("P1 - Nhóm B:", "10,11,12"),
+        'C': st.text_input("P1 - Nhóm C:", "20,21,22"),
+        'D': st.text_input("P1 - Nhóm D:", "30,31,32,33,34,35,36,40,41,42,43,44,45,46"),
+    }
 
-# PHƯƠNG PHÁP 3
-handle_strategy(
-    col3,
-    name="3",
-    default_group_map={
-        'A': "0, 19, 20, 21",
-        'B': "1,10",
-        'C': "14,11",
-        'D': "2,3,4,5,6,7,8,9,11,12"
-    },
-    group_colors={'A': "#E91E63", 'B': "#00BCD4", 'C': "#CDDC39", 'D': "#FF5722", '?': "#BDBDBD"},
-    key_prefix="pp3"
-)
+    group_map_1 = {g: [int(x) for x in re.findall(r'\d{2}', v)] for g, v in group_input_1.items()}
+
+    def find_group_1(n):
+        for g, vals in group_map_1.items():
+            if n in vals:
+                return g
+        return "?"
+
+    groups_1 = [find_group_1(n) for n in numbers]
+    group_colors_1 = {'A': "#F44336", 'B': "#2196F3", 'C': "#4CAF50", 'D': "#FF9800", '?': "#9E9E9E"}
+    draw_baccarat_board(groups_1, group_colors_1, num1)
+
+# ===== PHƯƠNG PHÁP 2 =====
+with col2:
+    st.subheader("🅱️ Phương pháp 2")
+    num2 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num2")
+
+    group_input_2 = {
+        'A': st.text_input("P2 - Nhóm A:", "05,15,25"),
+        'B': st.text_input("P2 - Nhóm B:", "35,45,55"),
+        'C': st.text_input("P2 - Nhóm C:", "65,75"),
+        'D': st.text_input("P2 - Nhóm D:", "85,95,99"),
+    }
+
+    group_map_2 = {g: [int(x) for x in re.findall(r'\d{2}', v)] for g, v in group_input_2.items()}
+
+    def find_group_2(n):
+        for g, vals in group_map_2.items():
+            if n in vals:
+                return g
+        return "?"
+
+    groups_2 = [find_group_2(n) for n in numbers]
+    group_colors_2 = {'A': "#795548", 'B': "#03A9F4", 'C': "#8BC34A", 'D': "#FFC107", '?': "#BDBDBD"}
+    draw_baccarat_board(groups_2, group_colors_2, num2)
+
+# ===== PHƯƠNG PHÁP 3 =====
+with col3:
+    st.subheader("🆎 Phương pháp 3")
+    num3 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num3")
+
+    group_input_3 = {
+        'A': st.text_input("P3 - Nhóm A:", "01,11,21,31"),
+        'B': st.text_input("P3 - Nhóm B:", "41,51"),
+        'C': st.text_input("P3 - Nhóm C:", "61,71"),
+        'D': st.text_input("P3 - Nhóm D:", "81,91"),
+    }
+
+    group_map_3 = {g: [int(x) for x in re.findall(r'\d{2}', v)] for g, v in group_input_3.items()}
+
+    def find_group_3(n):
+        for g, vals in group_map_3.items():
+            if n in vals:
+                return g
+        return "?"
+
+    groups_3 = [find_group_3(n) for n in numbers]
+    group_colors_3 = {'A': "#E91E63", 'B': "#00BCD4", 'C': "#CDDC39", 'D': "#FF5722", '?': "#BDBDBD"}
+    draw_baccarat_board(groups_3, group_colors_3, num3)
