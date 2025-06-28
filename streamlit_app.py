@@ -54,12 +54,13 @@ def analyze_sequence(seq):
     }
 
 # ----- GIAO DIỆN -----
-st.title("🎴 Baccarat Cầu Tracker (1000 cầu + thêm mới)")
+st.title("🎴 Baccarat Cầu Tracker (1000 cầu + thêm + xoá)")
 
 data = load_data()
 
-menu = st.sidebar.selectbox("Chọn chức năng", ["Tra cứu cầu", "Nhập cầu mới"])
+menu = st.sidebar.selectbox("Chọn chức năng", ["Tra cứu cầu", "Nhập cầu mới", "Xoá cầu"])
 
+# ----- NHẬP CẦU -----
 if menu == "Nhập cầu mới":
     st.subheader("📥 Nhập & lưu cầu mới")
     name = st.text_input("🔖 Tên chuỗi cầu (ví dụ: VIP_19h)")
@@ -74,6 +75,7 @@ if menu == "Nhập cầu mới":
         else:
             st.error("❌ Chỉ nhập ký tự B và P, không có ký tự lạ!")
 
+# ----- TRA CỨU -----
 elif menu == "Tra cứu cầu":
     st.subheader("🔍 Tra cứu & phân tích")
     search_key = st.text_input("Nhập tên cầu cần tìm (VD: Cau_0010 hoặc VIP...)")
@@ -88,3 +90,15 @@ elif menu == "Tra cứu cầu":
             st.write(f"- {k}: {v}")
     else:
         st.info("⛔ Không tìm thấy kết quả phù hợp.")
+
+# ----- XOÁ CẦU -----
+elif menu == "Xoá cầu":
+    st.subheader("🗑 Xoá chuỗi cầu đã lưu")
+    if not data:
+        st.warning("⚠️ Không có dữ liệu để xoá.")
+    else:
+        del_key = st.selectbox("🗂 Chọn tên chuỗi cầu để xoá", list(data.keys()))
+        if st.button("❌ Xoá chuỗi này"):
+            del data[del_key]
+            save_data(data)
+            st.success(f"✅ Đã xoá '{del_key}' khỏi hệ thống!")
