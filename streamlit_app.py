@@ -1,17 +1,35 @@
 import streamlit as st
 import json
 import os
+import random
 
 DATA_FILE = "baccarat_data.json"
 
-# Load dữ liệu
+# ----- DỮ LIỆU BAN ĐẦU (1000 cầu mẫu) -----
+def generate_sequences(n=1000, length=20):
+    data = {}
+    for i in range(1, n + 1):
+        name = f"Cau_{i:04d}"
+        sequence = ''.join(random.choices(['B', 'P'], k=length))
+        data[name] = sequence
+    return data
+
+# ----- ĐỌC / GHI FILE -----
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
-    return {}
+    else:
+        # Tạo dữ liệu ban đầu nếu chưa có file
+        data = generate_sequences()
+        save_data(data)
+        return data
 
-# Phân tích chuỗi
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f)
+
+# ----- THỐNG KÊ -----
 def analyze_sequence(seq):
     b_count = seq.count("B")
     p_count = seq.count("P")
@@ -35,27 +53,38 @@ def analyze_sequence(seq):
         "Chuỗi dài nhất P": max_streak("P"),
     }
 
-# Giao diện
-st.title("🎴 Baccarat Cầu Tracker (1000 cầu)")
+# ----- GIAO DIỆN -----
+st.title("🎴 Baccarat Cầu Tracker (1000 cầu + thêm mới)")
 
 data = load_data()
 
-st.sidebar.markdown("## 📂 Chức năng")
-menu = st.sidebar.selectbox("Chọn", ["Tra cứu cầu"])
+menu = st.sidebar.selectbox("Chọn chức năng", ["Tra cứu cầu", "Nhập cầu mới"])
 
-if menu == "Tra cứu cầu":
-    if not data:
-        st.warning("⚠️ Chưa có dữ liệu.")
-    else:
-        search_key = st.text_input("🔍 Nhập tên cầu cần tìm (ví dụ: Cau_0050)")
-        filtered_keys = [k for k in data.keys() if search_key.lower() in k.lower()]
+if menu == "Nhập cầu mới":
+    st.subheader("📥 Nhập & lưu cầu mới")
+    name = st.text_input("🔖 Tên chuỗi cầu (ví dụ: VIP_19h)")
+    seq_input = st.text_area("🎲 Nhập cầu (B/P, cách nhau hoặc viết liền)", height=100)
 
-        if filtered_keys:
-            name = st.selectbox("🗂 Kết quả khớp", filtered_keys)
-            st.code(data[name])
-            stats = analyze_sequence(data[name])
-            st.subheader("📊 Phân tích:")
-            for k, v in stats.items():
-                st.write(f"- {k}: {v}")
+    if st.button("💾 Lưu"):
+        sequence = seq_input.replace(" ", "").upper()
+        if set(sequence).issubset({"B", "P"}) and len(sequence) > 0:
+            data[name] = sequence
+            save_data(data)
+            st.success(f"✅ Đã lưu chuỗi '{name}'!")
         else:
-            st.info("❕ Không tìm thấy tên cầu.")
+            st.error("❌ Chỉ nhập ký tự B và P, không có ký tự lạ!")
+
+elif menu == "Tra cứu cầu":
+    st.subheader("🔍 Tra cứu & phân tích")
+    search_key = st.text_input("Nhập tên cầu cần tìm (VD: Cau_0010 hoặc VIP...)")
+    filtered = [k for k in data if search_key.lower() in k.lower()]
+
+    if filtered:
+        name = st.selectbox("🗂 Danh sách khớp:", filtered)
+        st.code(data[name])
+        stats = analyze_sequence(data[name])
+        st.subheader("📊 Phân tích:")
+        for k, v in stats.items():
+            st.write(f"- {k}: {v}")
+    else:
+        st.info("⛔ Không tìm thấy kết quả phù hợp.")
