@@ -5,7 +5,7 @@ import random
 
 DATA_FILE = "baccarat_data.json"
 
-# ----- DỮ LIỆU BAN ĐẦU -----
+# ------------------------ DỮ LIỆU BAN ĐẦU ------------------------
 def generate_sequences(n=1000, length=20):
     data = {}
     for i in range(1, n + 1):
@@ -27,7 +27,7 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f)
 
-# ----- PHÂN TÍCH -----
+# ------------------------ PHÂN TÍCH ------------------------
 def analyze_sequence(seq):
     b_count = seq.count("B")
     p_count = seq.count("P")
@@ -51,7 +51,8 @@ def analyze_sequence(seq):
         "Chuỗi dài nhất P": max_streak("P"),
     }
 
-# ----- GIAO DIỆN -----
+# ------------------------ GIAO DIỆN ------------------------
+st.set_page_config(page_title="Baccarat Cầu Tracker", layout="centered")
 st.title("🎴 Baccarat Cầu Tracker (Full: tạo + lưu + xoá + tra cứu chuỗi)")
 
 data = load_data()
@@ -71,22 +72,23 @@ if menu == "Nhập cầu mới":
             save_data(data)
             st.success(f"✅ Đã lưu chuỗi '{name}'!")
         else:
-            st.error("❌ Chỉ được dùng B và P.")
+            st.error("❌ Chỉ được dùng ký tự B và P.")
 
 # ----- TRA CỨU -----
 elif menu == "Tra cứu cầu":
     st.subheader("🔍 Tìm cầu theo chuỗi tay")
-    search_seq = st.text_input("🧩 Nhập chuỗi tay cần tra (tối thiểu 5 ký tự):")
+    search_seq = st.text_input("🧩 Nhập chuỗi tay cần tra (tối thiểu 2 ký tự):")
 
     matched = []
-    if len(search_seq.replace(" ", "")) >= 5:
-        seq = search_seq.replace(" ", "").upper()
+    seq = search_seq.replace(" ", "").upper()
+
+    if len(seq) >= 2 and set(seq).issubset({"B", "P"}):
         for k, v in data.items():
             if v.startswith(seq):
                 matched.append((k, v))
 
         if matched:
-            st.success(f"🔎 Tìm thấy {len(matched)} cầu có phần đầu giống: {seq}")
+            st.success(f"🔎 Có {len(matched)} cầu có phần đầu giống: {seq}")
             selected = st.selectbox("📌 Chọn cầu để phân tích", [m[0] for m in matched])
             st.code(data[selected])
             stats = analyze_sequence(data[selected])
@@ -95,8 +97,10 @@ elif menu == "Tra cứu cầu":
                 st.write(f"- {k}: {v}")
         else:
             st.warning("❌ Không tìm thấy chuỗi nào khớp phần đầu.")
+    elif seq and not set(seq).issubset({"B", "P"}):
+        st.error("❌ Chỉ được nhập B và P.")
     else:
-        st.info("👉 Vui lòng nhập ít nhất 5 ký tự B/P để tìm.")
+        st.info("ℹ️ Nhập ít nhất 2 ký tự để bắt đầu tìm.")
 
 # ----- XOÁ -----
 elif menu == "Xoá cầu":
