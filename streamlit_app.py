@@ -1,119 +1,72 @@
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import re
+import json
+import os
 
-st.set_page_config(page_title="Phân Tích Cầu Xổ Số - 3 Bảng Có Chọn Kết Quả", layout="wide")
-st.title("🎯 Phân Tích Cầu Xổ Số (00-99) - Chọn Số Cột Hiển Thị Mỗi Bảng")
+DATA_FILE = "baccarat_data.json"
 
-# ===== Nhập dãy số =====
-results = st.text_input("🎲 Nhập dãy số (cách nhau bằng khoảng trắng hoặc dấu phẩy):", "00 12 34 56 78 99")
-numbers = [int(x) for x in re.findall(r'\d{2}', results)]
+# Load data
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {}
 
-# ===== Hàm vẽ bảng Baccarat-style =====
-def draw_baccarat_board(groups, group_colors, max_columns):
-    columns = []
-    col_temp = []
-    last = None
-    for g in groups:
-        if g == last:
-            col_temp.append(g)
+# Save data
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f)
+
+# Thống kê cơ bản
+def analyze_sequence(seq):
+    b_count = seq.count("B")
+    p_count = seq.count("P")
+    total = len(seq)
+
+    def max_streak(char):
+        streak, max_s = 0, 0
+        for c in seq:
+            if c == char:
+                streak += 1
+                max_s = max(max_s, streak)
+            else:
+                streak = 0
+        return max_s
+
+    return {
+        "Tổng ván": total,
+        "Banker (%)": round(100 * b_count / total, 2),
+        "Player (%)": round(100 * p_count / total, 2),
+        "Chuỗi dài nhất B": max_streak("B"),
+        "Chuỗi dài nhất P": max_streak("P"),
+    }
+
+# UI
+st.title("🎴 Baccarat Cầu Tracker")
+
+data = load_data()
+
+menu = st.sidebar.selectbox("Chọn chức năng", ["Nhập cầu mới", "Tra cứu cầu cũ"])
+
+if menu == "Nhập cầu mới":
+    name = st.text_input("🔖 Đặt tên chuỗi cầu (VD: VIP 19h)")
+    seq_input = st.text_area("🎲 Nhập cầu (B hoặc P, viết liền hoặc cách nhau)", height=100)
+
+    if st.button("📥 Lưu cầu"):
+        sequence = seq_input.replace(" ", "").upper()
+        if set(sequence).issubset({"B", "P"}) and len(sequence) > 0:
+            data[name] = sequence
+            save_data(data)
+            st.success(f"Đã lưu chuỗi '{name}'!")
         else:
-            if col_temp:
-                columns.append(col_temp)
-            col_temp = [g]
-            last = g
-    if col_temp:
-        columns.append(col_temp)
+            st.error("Chỉ nhập ký tự B và P, không có ký tự lạ!")
 
-    columns = columns[-max_columns:]
-    max_len = max(len(c) for c in columns) if columns else 1
-
-    fig, ax = plt.subplots(figsize=(max(len(columns), 10), 6))
-    ax.axis('off')
-
-    for x, col in enumerate(columns):
-        for y, val in enumerate(col):
-            color = group_colors.get(val, "#9E9E9E")
-            ax.add_patch(plt.Rectangle((x, -y), 1, 1, color=color))
-            ax.text(x + 0.5, -y + 0.5, val, ha='center', va='center', color='white', fontsize=14)
-
-    plt.xlim(0, len(columns))
-    plt.ylim(-max_len, 1)
-    plt.tight_layout()
-    st.pyplot(fig)
-
-# ===== Tạo 3 bảng ngang =====
-col1, col2, col3 = st.columns(3)
-
-# ===== PHƯƠNG PHÁP 1 =====
-with col1:
-    st.subheader("🅰️ Phương pháp 1")
-    num1 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num1")
-
-    group_input_1 = {
-        'A': st.text_input("P1 - Nhóm A:", "00,01,02,03,04"),
-        'B': st.text_input("P1 - Nhóm B:", "10,11,12"),
-        'C': st.text_input("P1 - Nhóm C:", "20,21,22"),
-        'D': st.text_input("P1 - Nhóm D:", "30,31,32,33,34,35,36,40,41,42,43,44,45,46"),
-    }
-
-    group_map_1 = {g: [int(x) for x in re.findall(r'\d{2}', v)] for g, v in group_input_1.items()}
-
-    def find_group_1(n):
-        for g, vals in group_map_1.items():
-            if n in vals:
-                return g
-        return "?"
-
-    groups_1 = [find_group_1(n) for n in numbers]
-    group_colors_1 = {'A': "#F44336", 'B': "#2196F3", 'C': "#4CAF50", 'D': "#FF9800", '?': "#9E9E9E"}
-    draw_baccarat_board(groups_1, group_colors_1, num1)
-
-# ===== PHƯƠNG PHÁP 2 =====
-with col2:
-    st.subheader("🅱️ Phương pháp 2")
-    num2 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num2")
-
-    group_input_2 = {
-        'A': st.text_input("P2 - Nhóm A:", "05,15,25"),
-        'B': st.text_input("P2 - Nhóm B:", "35,45,55"),
-        'C': st.text_input("P2 - Nhóm C:", "65,75"),
-        'D': st.text_input("P2 - Nhóm D:", "85,95,99"),
-    }
-
-    group_map_2 = {g: [int(x) for x in re.findall(r'\d{2}', v)] for g, v in group_input_2.items()}
-
-    def find_group_2(n):
-        for g, vals in group_map_2.items():
-            if n in vals:
-                return g
-        return "?"
-
-    groups_2 = [find_group_2(n) for n in numbers]
-    group_colors_2 = {'A': "#795548", 'B': "#03A9F4", 'C': "#8BC34A", 'D': "#FFC107", '?': "#BDBDBD"}
-    draw_baccarat_board(groups_2, group_colors_2, num2)
-
-# ===== PHƯƠNG PHÁP 3 =====
-with col3:
-    st.subheader("🆎 Phương pháp 3")
-    num3 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num3")
-
-    group_input_3 = {
-        'A': st.text_input("P3 - Nhóm A:", "01,11,21,31"),
-        'B': st.text_input("P3 - Nhóm B:", "41,51"),
-        'C': st.text_input("P3 - Nhóm C:", "61,71"),
-        'D': st.text_input("P3 - Nhóm D:", "81,91"),
-    }
-
-    group_map_3 = {g: [int(x) for x in re.findall(r'\d{2}', v)] for g, v in group_input_3.items()}
-
-    def find_group_3(n):
-        for g, vals in group_map_3.items():
-            if n in vals:
-                return g
-        return "?"
-
-    groups_3 = [find_group_3(n) for n in numbers]
-    group_colors_3 = {'A': "#E91E63", 'B': "#00BCD4", 'C': "#CDDC39", 'D': "#FF5722", '?': "#BDBDBD"}
-    draw_baccarat_board(groups_3, group_colors_3, num3)
+elif menu == "Tra cứu cầu cũ":
+    if not data:
+        st.warning("Chưa có dữ liệu nào được lưu.")
+    else:
+        name = st.selectbox("🗂 Chọn tên chuỗi cầu", list(data.keys()))
+        st.code(data[name])
+        stats = analyze_sequence(data[name])
+        st.subheader("📊 Phân tích:")
+        for k, v in stats.items():
+            st.write(f"- {k}: {v}")
