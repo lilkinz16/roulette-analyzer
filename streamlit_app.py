@@ -5,7 +5,7 @@ import random
 
 DATA_FILE = "baccarat_data.json"
 
-# ----- DỮ LIỆU BAN ĐẦU (1000 cầu mẫu) -----
+# ----- DỮ LIỆU BAN ĐẦU -----
 def generate_sequences(n=1000, length=20):
     data = {}
     for i in range(1, n + 1):
@@ -14,13 +14,11 @@ def generate_sequences(n=1000, length=20):
         data[name] = sequence
     return data
 
-# ----- ĐỌC / GHI FILE -----
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
     else:
-        # Tạo dữ liệu ban đầu nếu chưa có file
         data = generate_sequences()
         save_data(data)
         return data
@@ -29,7 +27,7 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f)
 
-# ----- THỐNG KÊ -----
+# ----- PHÂN TÍCH -----
 def analyze_sequence(seq):
     b_count = seq.count("B")
     p_count = seq.count("P")
@@ -54,17 +52,17 @@ def analyze_sequence(seq):
     }
 
 # ----- GIAO DIỆN -----
-st.title("🎴 Baccarat Cầu Tracker (1000 cầu + thêm + xoá)")
+st.title("🎴 Baccarat Cầu Tracker (Full: tạo + lưu + xoá + tra cứu chuỗi)")
 
 data = load_data()
 
-menu = st.sidebar.selectbox("Chọn chức năng", ["Tra cứu cầu", "Nhập cầu mới", "Xoá cầu"])
+menu = st.sidebar.selectbox("📂 Chọn chức năng", ["Nhập cầu mới", "Tra cứu cầu", "Xoá cầu"])
 
-# ----- NHẬP CẦU -----
+# ----- NHẬP -----
 if menu == "Nhập cầu mới":
     st.subheader("📥 Nhập & lưu cầu mới")
-    name = st.text_input("🔖 Tên chuỗi cầu (ví dụ: VIP_19h)")
-    seq_input = st.text_area("🎲 Nhập cầu (B/P, cách nhau hoặc viết liền)", height=100)
+    name = st.text_input("🔖 Tên chuỗi cầu (VD: VIP_19h)")
+    seq_input = st.text_area("🎲 Nhập chuỗi tay (B/P, cách hoặc liền nhau)", height=100)
 
     if st.button("💾 Lưu"):
         sequence = seq_input.replace(" ", "").upper()
@@ -73,32 +71,41 @@ if menu == "Nhập cầu mới":
             save_data(data)
             st.success(f"✅ Đã lưu chuỗi '{name}'!")
         else:
-            st.error("❌ Chỉ nhập ký tự B và P, không có ký tự lạ!")
+            st.error("❌ Chỉ được dùng B và P.")
 
 # ----- TRA CỨU -----
 elif menu == "Tra cứu cầu":
-    st.subheader("🔍 Tra cứu & phân tích")
-    search_key = st.text_input("Nhập tên cầu cần tìm (VD: Cau_0010 hoặc VIP...)")
-    filtered = [k for k in data if search_key.lower() in k.lower()]
+    st.subheader("🔍 Tìm cầu theo chuỗi tay")
+    search_seq = st.text_input("🧩 Nhập chuỗi tay cần tra (tối thiểu 5 ký tự):")
 
-    if filtered:
-        name = st.selectbox("🗂 Danh sách khớp:", filtered)
-        st.code(data[name])
-        stats = analyze_sequence(data[name])
-        st.subheader("📊 Phân tích:")
-        for k, v in stats.items():
-            st.write(f"- {k}: {v}")
+    matched = []
+    if len(search_seq.replace(" ", "")) >= 5:
+        seq = search_seq.replace(" ", "").upper()
+        for k, v in data.items():
+            if v.startswith(seq):
+                matched.append((k, v))
+
+        if matched:
+            st.success(f"🔎 Tìm thấy {len(matched)} cầu có phần đầu giống: {seq}")
+            selected = st.selectbox("📌 Chọn cầu để phân tích", [m[0] for m in matched])
+            st.code(data[selected])
+            stats = analyze_sequence(data[selected])
+            st.subheader("📊 Phân tích:")
+            for k, v in stats.items():
+                st.write(f"- {k}: {v}")
+        else:
+            st.warning("❌ Không tìm thấy chuỗi nào khớp phần đầu.")
     else:
-        st.info("⛔ Không tìm thấy kết quả phù hợp.")
+        st.info("👉 Vui lòng nhập ít nhất 5 ký tự B/P để tìm.")
 
-# ----- XOÁ CẦU -----
+# ----- XOÁ -----
 elif menu == "Xoá cầu":
     st.subheader("🗑 Xoá chuỗi cầu đã lưu")
     if not data:
-        st.warning("⚠️ Không có dữ liệu để xoá.")
+        st.warning("⚠️ Không có cầu để xoá.")
     else:
-        del_key = st.selectbox("🗂 Chọn tên chuỗi cầu để xoá", list(data.keys()))
-        if st.button("❌ Xoá chuỗi này"):
+        del_key = st.selectbox("🗂 Chọn cầu để xoá", list(data.keys()))
+        if st.button("❌ Xoá cầu này"):
             del data[del_key]
             save_data(data)
-            st.success(f"✅ Đã xoá '{del_key}' khỏi hệ thống!")
+            st.success(f"✅ Đã xoá '{del_key}'!")
