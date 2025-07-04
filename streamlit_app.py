@@ -50,6 +50,7 @@ def analyze_baccarat(sequence):
     pattern = pattern_type
     confidence = 0
     risk = "Normal"
+    strong_signal = "Không"
 
     if pattern in FAILED_PATTERNS:
         risk = "Trap"
@@ -58,9 +59,11 @@ def analyze_baccarat(sequence):
     elif pattern == "Dragon":
         prediction = last
         confidence = 75
+        strong_signal = "🔥 Có thể vào tiền mạnh (Dragon)"
     elif pattern == "Two-Cut":
         prediction = "B" if last == "P" else "P"
         confidence = 70
+        strong_signal = "✅ Ổn định, có thể cân nhắc"
     elif pattern == "Pingpong":
         prediction = "B" if last == "P" else "P"
         confidence = 65
@@ -80,7 +83,8 @@ def analyze_baccarat(sequence):
         "pattern": pattern,
         "risk": risk,
         "recommendation": recommendation,
-        "backtest": list(main[-10:]),
+        "strong_signal": strong_signal,
+        "backtest": list(main[-100:]),
         "full_sequence": list(sequence),
         "predictions": predict_history(main)
     }
@@ -91,7 +95,7 @@ def predict_history(main):
         prev, last = main[i-2], main[i-1]
         guess = "B" if last == "P" else "P" if prev != last else last
         predictions.append((main[i], guess))
-    return predictions[-10:]  # only latest 10
+    return predictions[-100:]  # show longer history
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
@@ -142,16 +146,18 @@ def main():
             st.markdown(f"**🎯 Accuracy:** {result['confidence']}%")
             st.markdown(f"**📍 Risk:** {result['risk']}")
             st.markdown(f"**🧾 Recommendation:** {result['recommendation']}")
+            if result['strong_signal'] != "Không":
+                st.success(f"🧠 Gợi ý vào tiền: {result['strong_signal']}")
 
-            st.subheader("📈 Backtest dự đoán 10 ván gần nhất")
+            st.subheader("📈 Backtest dự đoán (100 ván gần nhất)")
             hit = 0
             miss = 0
             for idx, (real, pred) in enumerate(result['predictions']):
                 ok = real == pred
-                st.markdown(f"# {idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
+                st.markdown(f"#{idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
                 if ok: hit += 1
                 else: miss += 1
-            st.markdown(f"**🎯 Tổng KQ:** {hit}/10 đúng → `{round(hit/10*100)}%` chính xác")
+            st.markdown(f"**🎯 Tổng KQ:** {hit}/{len(result['predictions'])} đúng → `{round(hit/len(result['predictions'])*100)}%` chính xác")
 
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
