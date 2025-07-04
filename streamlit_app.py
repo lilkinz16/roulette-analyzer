@@ -20,6 +20,10 @@ if "model" not in st.session_state:
     st.session_state.encoder = LabelEncoder()
     st.session_state.X_train = []
     st.session_state.y_train = []
+if "transitions" not in st.session_state:
+    st.session_state.transitions = []
+if "last_pattern" not in st.session_state:
+    st.session_state.last_pattern = None
 
 # === FIRE MODE ===
 col1, col2 = st.columns([1, 2])
@@ -65,19 +69,36 @@ def parse_streaks(seq):
     if current: streaks.append(current)
     return streaks
 
-# === Tie Probability Detection ===
+def detect_transition(prev_pattern, current_pattern, current_round):
+    if not current_pattern:
+        return None
+    if prev_pattern == "TYPE_1" and current_pattern == "TYPE_2":
+        msg = "🔁 TYPE_1 → TYPE_2 (bắt đầu chu kỳ PPB)"
+    elif prev_pattern and prev_pattern.startswith("TYPE_1") and current_pattern == "TYPE_1":
+        msg = "↘️ TYPE_1 đang rút ngắn (co mẫu)"
+    elif prev_pattern != current_pattern:
+        msg = f"🔄 {prev_pattern or 'None'} → {current_pattern}"
+    else:
+        return None
+
+    st.session_state.transitions.append({
+        "round": current_round,
+        "from": prev_pattern or "None",
+        "to": current_pattern,
+        "note": msg
+    })
+    return msg
+
 def tie_probability(seq):
     tie_count = seq.count("T")
     if len(seq) == 0:
         return 0
     return round((tie_count / len(seq)) * 100, 2)
 
-# === Bet Amount by Mistake Count ===
 def bet_amount(n):
     base = 20
     return base * (2 ** n) if n < 4 else "STOP"
 
-# === Machine Learning Model Training ===
 def update_model():
     if len(st.session_state.X_train) >= 10:
         X = st.session_state.encoder.fit_transform(st.session_state.X_train).reshape(-1, 1)
@@ -94,18 +115,25 @@ def predict_ml(sequence):
     best_idx = np.argmax(prob)
     return labels[best_idx], round(prob[best_idx] * 100, 2)
 
-# === Input Form ===
 with st.form("predict_form"):
     result = st.text_input("🔢 Nhập kết quả ván gần nhất (B/P/T):", max_chars=1).upper()
     submitted = st.form_submit_button("📥 Gửi và xử lý")
 
-# === Handle Submission ===
 if submitted and result in ["B", "P", "T"]:
     full_seq = ''.join([x["real"] for x in st.session_state.history])
     streaks = parse_streaks(full_seq)
     pattern = detect_pattern(streaks)
 
-    # AI dự đoán bằng rule
+    transition_msg = detect_transition(
+        st.session_state.last_pattern,
+        pattern,
+        len(st.session_state.history) + 1
+    )
+    st.session_state.last_pattern = pattern
+
+    if transition_msg:
+        st.info(transition_msg)
+
     if pattern in ["TYPE_1", "TYPE_3", "TYPE_5"]:
         prediction = "B"
         confidence = 70
@@ -119,17 +147,14 @@ if submitted and result in ["B", "P", "T"]:
         confidence = 50
         reason = "Không rõ pattern"
 
-    # Dự đoán Tie
     tie_chance = tie_probability(full_seq)
     tie_warn = tie_chance > 55
 
-    # ML dự đoán
     if len(st.session_state.X_train) >= 10:
         ml_pred, ml_conf = predict_ml(full_seq)
     else:
         ml_pred, ml_conf = None, 0
 
-    # FIRE MODE check
     if st.session_state.fire_mode and confidence < 85:
         prediction = None
         outcome = "⏩ Bỏ qua"
@@ -150,7 +175,6 @@ if submitted and result in ["B", "P", "T"]:
         outcome = "⏩ Bỏ qua"
         symbol = "⏩"
 
-    # Lưu lịch sử
     st.session_state.history.append({
         "real": result,
         "predict": prediction,
@@ -162,13 +186,11 @@ if submitted and result in ["B", "P", "T"]:
         "ml_conf": ml_conf
     })
 
-    # Thêm dữ liệu huấn luyện
     if len(full_seq) >= 5:
         st.session_state.X_train.append(full_seq[-5:])
         st.session_state.y_train.append(result)
         update_model()
 
-# === Hiển thị Kết quả ===
 st.markdown("---")
 st.subheader("📊 Thống kê & Kết quả")
 
@@ -185,29 +207,30 @@ st.markdown(f"✅ Tổng: {total} | 🏆 Đúng: {wins} | ❌ Sai: {losses} | �
 st.markdown(f"🎯 Chính xác: `{acc}%`")
 st.markdown(f"💰 Cược đề xuất: `{bet_amount(st.session_state.mistake_count)}`")
 
-# Hiển thị cảnh báo Tie
 if st.session_state.history and st.session_state.history[-1]["tie_warn"]:
     st.warning("🟢 CẢNH BÁO: Xác suất HÒA cao hơn 55%!")
 
-# Hiển thị bảng kết quả
 for idx, h in enumerate(st.session_state.history, 1):
     ml_info = f" | AI dự đoán: `{h['ml_pred']}` ({h['ml_conf']}%)" if h["ml_pred"] else ""
     st.markdown(f"Ván {idx}: `{h['real']}` → Dự đoán: `{h['predict']}` ({h['conf']}%) → **{h['outcome']}**{ml_info}")
 
-# === Biểu đồ kết quả ===
 if total > 0:
     df = pd.DataFrame(st.session_state.history)
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-
     df['outcome'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax[0])
     ax[0].set_title("Phân loại kết quả")
     ax[0].set_ylabel("")
-
     ax[1].plot(range(1, total+1), [1 if o == "✅ ĐÚNG" else 0 for o in df["outcome"]], marker='o')
     ax[1].set_title("Kết quả từng ván")
     ax[1].set_xlabel("Ván")
     ax[1].set_ylabel("1 = Đúng")
-
     st.pyplot(fig)
 
-st.caption("🔧 Phiên bản nâng cấp hoàn chỉnh AION BACCARAT X1 – AI | Streamlit | ML | Charts")
+if st.session_state.transitions:
+    st.markdown("---")
+    st.subheader("📋 Bảng chi tiết chuyển TYPE")
+    df_trans = pd.DataFrame(st.session_state.transitions)
+    df_trans.columns = ["Số ván", "Từ TYPE", "Đến TYPE", "Ghi chú"]
+    st.dataframe(df_trans, use_container_width=True)
+
+st.caption("🔧 Phiên bản nâng cấp hoàn chỉnh AION BACCARAT X1 – AI | Streamlit | ML | Charts | Transition")
