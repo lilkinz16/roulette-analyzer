@@ -9,6 +9,7 @@ if "FAILED_PATTERNS" not in st.session_state:
 
 GRID_ROWS = 6
 
+
 def group_results(results):
     groups = []
     if not results:
@@ -25,6 +26,7 @@ def group_results(results):
     groups.append(current * count)
     return groups
 
+
 def detect_pattern(groups):
     if not groups:
         return "Unknown"
@@ -36,6 +38,7 @@ def detect_pattern(groups):
     elif len(groups) >= 3 and groups[-1][0] != groups[-2][0] != groups[-3][0]:
         return "Pingpong"
     return "Unstable"
+
 
 def analyze_baccarat(sequence):
     if len(sequence) < 20:
@@ -86,70 +89,38 @@ def analyze_baccarat(sequence):
         "predictions": predict_history(main)
     }
 
+
 def predict_history(main):
     predictions = []
     for i in range(2, len(main)):
-        prev, last = main[i-2], main[i-1]
+        prev, last = main[i - 2], main[i - 1]
         guess = "B" if last == "P" else "P" if prev != last else last
         predictions.append((main[i], guess))
     return predictions[-10:]
 
+
 def color_baccarat(val):
-    if val == "B":
-        return "background-color: #1E90FF; color: white; text-align: center"
-    elif val == "P":
-        return "background-color: #FF6347; color: white; text-align: center"
+    if val == "✅":
+        return "background-color: #4CAF50; color: white; text-align: center"
+    elif val == "❌":
+        return "background-color: #F44336; color: white; text-align: center"
     return "text-align: center"
 
-def render_baccarat_grid(results):
-    grid = [["" for _ in range(20)] for _ in range(GRID_ROWS)]
-    col = 0
-    row = 0
-    prev = None
-    for symbol in results:
-        if symbol != prev:
-            col += 1
-            row = 0
-            prev = symbol
-        elif row < GRID_ROWS - 1:
-            row += 1
-        else:
-            col += 1
-            row = 0
-        if col < 20:
-            grid[row][col] = symbol
+
+def render_backtest_grid(predictions):
+    grid = [["" for _ in range(10)] for _ in range(1)]
+    for i, (real, pred) in enumerate(predictions):
+        grid[0][i] = "✅" if real == pred else "❌"
     df = pd.DataFrame(grid)
     styled_df = df.style.applymap(color_baccarat)
-    st.dataframe(styled_df, height=220)
+    st.dataframe(styled_df, height=80)
 
-def render_big_road(sequence):
-    board = [["" for _ in range(40)] for _ in range(6)]
-    col, row = 0, 0
-    last_type = None
-    row_tracker = {}
-    for idx, result in enumerate(sequence):
-        if result == last_type:
-            if (col, row + 1) not in row_tracker and row + 1 < GRID_ROWS:
-                row += 1
-            else:
-                col += 1
-                row = 0
-        else:
-            if idx != 0:
-                col += 1
-                row = 0
-        board[row][col] = result
-        row_tracker[(col, row)] = True
-        last_type = result
-    df = pd.DataFrame(board)
-    styled_df = df.style.applymap(color_baccarat)
-    st.dataframe(styled_df, height=250)
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
     fig = go.Figure(data=go.Scatter(
-        x=list(range(1, len(data)+1)),
-        y=[1]*len(data),
+        x=list(range(1, len(data) + 1)),
+        y=[1] * len(data),
         mode='markers+text',
         marker=dict(size=14, color=colors),
         text=data,
@@ -165,6 +136,7 @@ def plot_trend_chart(data):
         height=200
     )
     st.plotly_chart(fig, use_container_width=True)
+
 
 def main():
     st.set_page_config(page_title="SYNAPSE VISION Baccarat", layout="centered")
@@ -199,12 +171,10 @@ def main():
             for idx, (real, pred) in enumerate(result['predictions']):
                 ok = real == pred
                 st.markdown(f"#{idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
-            st.subheader("🧮 Bảng Baccarat (lưới trực quan)")
-            render_baccarat_grid(result['backtest'])
+            st.subheader("📊 Bảng lưới Backtest (Đúng/Sai)")
+            render_backtest_grid(result['predictions'])
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
-            st.subheader("📊 Big Road")
-            render_big_road(result['full_sequence'])
 
 if __name__ == "__main__":
     main()
