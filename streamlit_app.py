@@ -84,7 +84,7 @@ def analyze_baccarat(sequence):
         "risk": risk,
         "recommendation": recommendation,
         "strong_signal": strong_signal,
-        "backtest": list(main[-10:]),
+        "backtest": list(main[-100:]),
         "full_sequence": list(sequence),
         "predictions": predict_history(main)
     }
@@ -96,7 +96,7 @@ def predict_history(main):
         prev, last = main[i - 2], main[i - 1]
         guess = "B" if last == "P" else "P" if prev != last else last
         predictions.append((main[i], guess))
-    return predictions[-10:]
+    return predictions[-100:]
 
 
 def color_baccarat(val):
@@ -108,12 +108,21 @@ def color_baccarat(val):
 
 
 def render_backtest_grid(predictions):
-    grid = [["" for _ in range(10)] for _ in range(1)]
+    cols = (len(predictions) + GRID_ROWS - 1) // GRID_ROWS
+    grid = [["" for _ in range(cols)] for _ in range(GRID_ROWS)]
+    col = 0
+    row = 0
     for i, (real, pred) in enumerate(predictions):
-        grid[0][i] = "✅" if real == pred else "❌"
+        result = "✅" if real == pred else "❌"
+        grid[row][col] = result
+        if row < GRID_ROWS - 1:
+            row += 1
+        else:
+            row = 0
+            col += 1
     df = pd.DataFrame(grid)
     styled_df = df.style.applymap(color_baccarat)
-    st.dataframe(styled_df, height=80)
+    st.dataframe(styled_df, height=300)
 
 
 def plot_trend_chart(data):
@@ -167,11 +176,11 @@ def main():
             st.markdown(f"**🧾 Recommendation:** {result['recommendation']}")
             if result['strong_signal'] != "Không":
                 st.success(f"🧠 Gợi ý vào tiền: {result['strong_signal']}")
-            st.subheader("📈 Backtest (10 ván gần nhất)")
-            for idx, (real, pred) in enumerate(result['predictions']):
+            st.subheader("📈 Backtest (100 ván gần nhất)")
+            for idx, (real, pred) in enumerate(result['predictions'][-10:]):
                 ok = real == pred
                 st.markdown(f"#{idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
-            st.subheader("📊 Bảng lưới Backtest (Đúng/Sai)")
+            st.subheader("📊 Bảng lưới Backtest (100 kết quả dạng cầu)")
             render_backtest_grid(result['predictions'])
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
