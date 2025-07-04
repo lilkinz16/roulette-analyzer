@@ -1,19 +1,27 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
 
 st.set_page_config(page_title="AION BACCARAT X1", layout="centered")
-st.title("🎯 AION BACCARAT X1 – Dự đoán Baccarat AI")
+st.title("🎯 AION BACCARAT X1 – AI Dự đoán Baccarat toàn diện")
 
-# Session state
+# === Session State ===
 if "history" not in st.session_state:
     st.session_state.history = []
-if "predictions" not in st.session_state:
-    st.session_state.predictions = []
 if "fire_mode" not in st.session_state:
     st.session_state.fire_mode = False
 if "mistake_count" not in st.session_state:
     st.session_state.mistake_count = 0
+if "model" not in st.session_state:
+    st.session_state.model = RandomForestClassifier()
+    st.session_state.encoder = LabelEncoder()
+    st.session_state.X_train = []
+    st.session_state.y_train = []
 
-# Cài đặt chế độ "bắn"
+# === FIRE MODE ===
 col1, col2 = st.columns([1, 2])
 with col1:
     if st.button("🚀 Bật chế độ BẮN"):
@@ -21,71 +29,117 @@ with col1:
     if st.button("🛑 Tắt chế độ BẮN"):
         st.session_state.fire_mode = False
 with col2:
-    fire_status = "ĐANG BẬT 🔥" if st.session_state.fire_mode else "ĐANG TẮT ❌"
-    st.markdown(f"**Chế độ bắn:** `{fire_status}`")
+    status = "ĐANG BẬT 🔥" if st.session_state.fire_mode else "ĐANG TẮT ❌"
+    st.markdown(f"**Chế độ bắn:** `{status}`")
 
-# Hàm xử lý dữ liệu
-def parse_streaks(sequence):
+# === Pattern Detection Logic ===
+def detect_pattern(streaks):
+    if len(streaks) < 2:
+        return None
+    a, b = streaks[-2:]
+    la, lb = len(a), len(b)
+    if la == lb:
+        return "TYPE_1"
+    if la >= 2 and lb == 1:
+        return "TYPE_2"
+    if la >= 3 and lb == 2:
+        return "TYPE_3"
+    if la >= 4 and lb == 3:
+        return "TYPE_4"
+    if la >= 5 and lb == 4:
+        return "TYPE_5"
+    if la >= 6 and lb == 5:
+        return "TYPE_6"
+    return None
+
+def parse_streaks(seq):
     streaks = []
-    current = ''
-    for ch in sequence:
-        if ch == 'T':
-            continue
-        if current == '' or current[0] == ch:
+    current = ""
+    for ch in seq:
+        if ch == "T": continue
+        if current == "" or current[0] == ch:
             current += ch
         else:
             streaks.append(current)
             current = ch
-    if current:
-        streaks.append(current)
+    if current: streaks.append(current)
     return streaks
 
-def detect_pattern_type(streaks):
-    if len(streaks) < 2:
-        return None
-    last_two = streaks[-2:]
-    if len(last_two[0]) == len(last_two[1]):
-        return "TYPE_1"
-    elif len(last_two[0]) >= 2 and len(last_two[1]) == 1:
-        return "TYPE_2"
-    return None
+# === Tie Probability Detection ===
+def tie_probability(seq):
+    tie_count = seq.count("T")
+    if len(seq) == 0:
+        return 0
+    return round((tie_count / len(seq)) * 100, 2)
 
-def suggest_next_move(pattern_type):
-    if pattern_type == "TYPE_1":
-        return ("B", 70, "Phát hiện mẫu cặp cân bằng (BP)")
-    elif pattern_type == "TYPE_2":
-        return ("P", 75, "Chu kỳ Cutpoint-1 PPB đang diễn ra")
-    else:
-        return (None, 50, "⏩ Bỏ qua – Không đủ tự tin để dự đoán")
-
-def get_bet_amount(mistake_count):
+# === Bet Amount by Mistake Count ===
+def bet_amount(n):
     base = 20
-    return base * (2 ** mistake_count) if mistake_count < 4 else "DỪNG LẠI"
+    return base * (2 ** n) if n < 4 else "STOP"
 
-# Giao diện nhập liệu
+# === Machine Learning Model Training ===
+def update_model():
+    if len(st.session_state.X_train) >= 10:
+        X = st.session_state.encoder.fit_transform(st.session_state.X_train).reshape(-1, 1)
+        y = np.array(st.session_state.y_train)
+        st.session_state.model.fit(X, y)
+
+def predict_ml(sequence):
+    if len(sequence) < 5:
+        return None, 0
+    seq5 = sequence[-5:]
+    val = st.session_state.encoder.transform([seq5])[0]
+    prob = st.session_state.model.predict_proba([[val]])[0]
+    labels = st.session_state.model.classes_
+    best_idx = np.argmax(prob)
+    return labels[best_idx], round(prob[best_idx] * 100, 2)
+
+# === Input Form ===
 with st.form("predict_form"):
-    input_result = st.text_input("🔢 Nhập kết quả thật của ván gần nhất (B / P / T)", max_chars=1).upper()
-    submitted = st.form_submit_button("📥 Gửi và dự đoán ván kế")
+    result = st.text_input("🔢 Nhập kết quả ván gần nhất (B/P/T):", max_chars=1).upper()
+    submitted = st.form_submit_button("📥 Gửi và xử lý")
 
-if submitted and input_result in ["B", "P", "T"]:
-    # Lấy chuỗi kết quả
-    sequence = ''.join([x["real"] for x in st.session_state.history])
-    streaks = parse_streaks(sequence)
-    pattern_type = detect_pattern_type(streaks)
-    move, confidence, reason = suggest_next_move(pattern_type)
+# === Handle Submission ===
+if submitted and result in ["B", "P", "T"]:
+    full_seq = ''.join([x["real"] for x in st.session_state.history])
+    streaks = parse_streaks(full_seq)
+    pattern = detect_pattern(streaks)
 
-    # Xác định có nên dự đoán không
+    # AI dự đoán bằng rule
+    if pattern in ["TYPE_1", "TYPE_3", "TYPE_5"]:
+        prediction = "B"
+        confidence = 70
+        reason = f"Pattern {pattern} → B"
+    elif pattern in ["TYPE_2", "TYPE_4", "TYPE_6"]:
+        prediction = "P"
+        confidence = 75
+        reason = f"Pattern {pattern} → P"
+    else:
+        prediction = None
+        confidence = 50
+        reason = "Không rõ pattern"
+
+    # Dự đoán Tie
+    tie_chance = tie_probability(full_seq)
+    tie_warn = tie_chance > 55
+
+    # ML dự đoán
+    if len(st.session_state.X_train) >= 10:
+        ml_pred, ml_conf = predict_ml(full_seq)
+    else:
+        ml_pred, ml_conf = None, 0
+
+    # FIRE MODE check
     if st.session_state.fire_mode and confidence < 85:
         prediction = None
         outcome = "⏩ Bỏ qua"
         symbol = "⏩"
-    elif confidence >= 65:
-        prediction = move
-        if input_result == prediction:
+    elif prediction:
+        if result == prediction:
             outcome = "✅ ĐÚNG"
             symbol = "⚪"
             st.session_state.mistake_count = 0
-        elif input_result == "T":
+        elif result == "T":
             outcome = "🟢 HÒA"
             symbol = "🟢"
         else:
@@ -93,47 +147,67 @@ if submitted and input_result in ["B", "P", "T"]:
             symbol = "🟠"
             st.session_state.mistake_count += 1
     else:
-        prediction = None
         outcome = "⏩ Bỏ qua"
         symbol = "⏩"
 
-    # Ghi vào lịch sử
+    # Lưu lịch sử
     st.session_state.history.append({
-        "real": input_result,
+        "real": result,
         "predict": prediction,
         "conf": confidence,
         "outcome": outcome,
-        "symbol": symbol
+        "symbol": symbol,
+        "tie_warn": tie_warn,
+        "ml_pred": ml_pred,
+        "ml_conf": ml_conf
     })
 
-    # Tự động reset nếu sai quá 4 lần
-    if st.session_state.mistake_count >= 4:
-        st.warning("❌ Đã sai liên tiếp 4 lần – dừng cược và tổng kết!")
-        st.session_state.fire_mode = False
-        st.session_state.mistake_count = 0
+    # Thêm dữ liệu huấn luyện
+    if len(full_seq) >= 5:
+        st.session_state.X_train.append(full_seq[-5:])
+        st.session_state.y_train.append(result)
+        update_model()
 
-# Thống kê
-total = len(st.session_state.history)
-win = sum(1 for i in st.session_state.history if i["outcome"] == "✅ ĐÚNG")
-lose = sum(1 for i in st.session_state.history if i["outcome"] == "❌ SAI")
-tie = sum(1 for i in st.session_state.history if i["outcome"] == "🟢 HÒA")
-skip = sum(1 for i in st.session_state.history if i["outcome"] == "⏩ Bỏ qua")
-accuracy = round((win / (win + lose)) * 100, 2) if (win + lose) > 0 else 0
-
-# Hiển thị kết quả
+# === Hiển thị Kết quả ===
 st.markdown("---")
-st.markdown("## 📊 Kết quả phân tích")
+st.subheader("📊 Thống kê & Kết quả")
+
+total = len(st.session_state.history)
+wins = sum(1 for h in st.session_state.history if h["outcome"] == "✅ ĐÚNG")
+losses = sum(1 for h in st.session_state.history if h["outcome"] == "❌ SAI")
+ties = sum(1 for h in st.session_state.history if h["outcome"] == "🟢 HÒA")
+skips = sum(1 for h in st.session_state.history if h["outcome"] == "⏩ Bỏ qua")
+acc = round((wins / (wins + losses)) * 100, 2) if (wins + losses) > 0 else 0
 
 dna = "".join([h["symbol"] for h in st.session_state.history])
-st.markdown(f"🧬 **DNA kết quả:** `{dna}`")
+st.markdown(f"🧬 DNA kết quả: `{dna}`")
+st.markdown(f"✅ Tổng: {total} | 🏆 Đúng: {wins} | ❌ Sai: {losses} | 🟢 Hòa: {ties} | ⏩ Bỏ qua: {skips}")
+st.markdown(f"🎯 Chính xác: `{acc}%`")
+st.markdown(f"💰 Cược đề xuất: `{bet_amount(st.session_state.mistake_count)}`")
 
+# Hiển thị cảnh báo Tie
+if st.session_state.history and st.session_state.history[-1]["tie_warn"]:
+    st.warning("🟢 CẢNH BÁO: Xác suất HÒA cao hơn 55%!")
+
+# Hiển thị bảng kết quả
 for idx, h in enumerate(st.session_state.history, 1):
-    predict_text = f"{h['predict']} ({h['conf']}%)" if h["predict"] else "⏩ Bỏ qua"
-    st.markdown(f"Ván {idx}: Dự đoán: `{predict_text}` – Kết quả: `{h['real']}` → **{h['outcome']}**")
+    ml_info = f" | AI dự đoán: `{h['ml_pred']}` ({h['ml_conf']}%)" if h["ml_pred"] else ""
+    st.markdown(f"Ván {idx}: `{h['real']}` → Dự đoán: `{h['predict']}` ({h['conf']}%) → **{h['outcome']}**{ml_info}")
 
-st.markdown("---")
-st.markdown(f"✅ **Tổng ván:** {total} | 🏆 Đúng: {win} | ❌ Sai: {lose} | 🟢 Hòa: {tie} | ⏩ Bỏ qua: {skip}")
-st.markdown(f"🎯 **Tỷ lệ chính xác:** `{accuracy}%`")
-st.markdown(f"💰 **Tiền cược đề xuất:** `{get_bet_amount(st.session_state.mistake_count)}₫`")
+# === Biểu đồ kết quả ===
+if total > 0:
+    df = pd.DataFrame(st.session_state.history)
+    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
 
-st.caption("🧠 AION BACCARAT X1 – Phiên bản demo trên Streamlit. Bạn có thể phát triển thêm AI, vẽ biểu đồ, hoặc tải dữ liệu.")
+    df['outcome'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax[0])
+    ax[0].set_title("Phân loại kết quả")
+    ax[0].set_ylabel("")
+
+    ax[1].plot(range(1, total+1), [1 if o == "✅ ĐÚNG" else 0 for o in df["outcome"]], marker='o')
+    ax[1].set_title("Kết quả từng ván")
+    ax[1].set_xlabel("Ván")
+    ax[1].set_ylabel("1 = Đúng")
+
+    st.pyplot(fig)
+
+st.caption("🔧 Phiên bản nâng cấp hoàn chỉnh AION BACCARAT X1 – AI | Streamlit | ML | Charts")
