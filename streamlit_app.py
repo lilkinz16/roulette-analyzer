@@ -231,6 +231,7 @@ if st.session_state.transitions:
     st.subheader("📋 Bảng chi tiết chuyển TYPE")
     df_trans = pd.DataFrame(st.session_state.transitions)
     df_trans.columns = ["Số ván", "Từ TYPE", "Đến TYPE", "Ghi chú"]
-    st.dataframe(df_trans, use_container_width=True)
+    df_trans = df_trans.reset_index(drop=True)
+    st.table(df_trans)
 
 st.caption("🔧 Phiên bản nâng cấp hoàn chỉnh AION BACCARAT X1 – AI | Streamlit | ML | Charts | Transition")
