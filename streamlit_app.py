@@ -123,7 +123,7 @@ def render_baccarat_grid(results):
             grid[row][col] = symbol
 
     df = pd.DataFrame(grid)
-    st.dataframe(df.style.set_properties(**{'text-align': 'center'}).highlight_null(null_color='white'), height=220)
+    st.dataframe(df.style.set_properties(**{'text-align': 'center'}), height=220)
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
