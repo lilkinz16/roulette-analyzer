@@ -1,4 +1,5 @@
 import streamlit as st
+import plotly.graph_objects as go
 
 # Store failed patterns to avoid reuse
 FAILED_PATTERNS = set()
@@ -80,12 +81,42 @@ def analyze_baccarat(sequence):
         "pattern": pattern,
         "risk": risk,
         "recommendation": recommendation,
-        "backtest": list(main[-10:])
+        "backtest": list(main[-10:]),
+        "full_sequence": list(sequence)
     }
+
+def plot_trend_chart(data):
+    colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
+    fig = go.Figure(data=go.Scatter(
+        x=list(range(1, len(data)+1)),
+        y=[1]*len(data),
+        mode='markers',
+        marker=dict(size=16, color=colors),
+        text=data
+    ))
+    fig.update_layout(
+        title="Bản đồ xu hướng toàn trận",
+        xaxis_title="Hand",
+        yaxis_visible=False,
+        plot_bgcolor="#0e1117",
+        paper_bgcolor="#0e1117",
+        font_color="white",
+        height=150
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 def main():
     st.set_page_config(page_title="SYNAPSE VISION Baccarat", layout="centered")
-    st.title("SYNAPSE VISION Baccarat")
+    st.markdown("""
+        <style>
+        body, .stApp {
+            background-color: #0e1117;
+            color: white;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    st.title("🎴 SYNAPSE VISION Baccarat")
 
     user_input = st.text_input("Nhập kết quả (ví dụ: BBPBPPPPPBBPBBBBPPP):")
 
@@ -107,6 +138,9 @@ def main():
             cols = st.columns(len(result['backtest']))
             for i, (col, outcome) in enumerate(zip(cols, result['backtest'])):
                 col.metric(label=f"#{i+1}", value=outcome)
+
+            st.subheader("📊 Bản đồ xu hướng toàn trận")
+            plot_trend_chart(result['full_sequence'])
 
 if __name__ == "__main__":
     main()
