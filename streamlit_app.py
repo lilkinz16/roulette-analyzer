@@ -116,3 +116,5 @@ def predict_ml(sequence):
     labels = st.session_state.model.classes_
     best_idx = np.argmax(prob)
     return labels[best_idx], round(prob[best_idx] * 100, 2)
+
+# PHẦN CÒN LẠI CỦA ỨNG DỤNG ĐẦY ĐỦ SẼ ĐƯỢC THÊM SAU – bạn có thể dán tiếp phần còn lại vào đây nếu cần
