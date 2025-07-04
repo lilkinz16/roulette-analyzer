@@ -117,4 +117,98 @@ def predict_ml(sequence):
     best_idx = np.argmax(prob)
     return labels[best_idx], round(prob[best_idx] * 100, 2)
 
-# PHẦN CÒN LẠI CỦA ỨNG DỤNG ĐẦY ĐỦ SẼ ĐƯỢC THÊM SAU – bạn có thể dán tiếp phần còn lại vào đây nếu cần
+# === INPUT FORM & RESULT DISPLAY ===
+with st.form("predict_form"):
+    result = st.text_input("🔢 Nhập kết quả ván gần nhất (B/P/T):", max_chars=1).upper()
+    submitted = st.form_submit_button("📥 Gửi và xử lý")
+
+if submitted and result in ["B", "P", "T"]:
+    full_seq = ''.join([x["real"] for x in st.session_state.history])
+    streaks = parse_streaks(full_seq)
+    pattern = detect_pattern(streaks)
+
+    transition_msg = detect_transition(
+        st.session_state.last_pattern,
+        pattern,
+        len(st.session_state.history) + 1
+    )
+    st.session_state.last_pattern = pattern
+
+    if transition_msg:
+        st.info(transition_msg)
+
+    if pattern in ["TYPE_1", "TYPE_3", "TYPE_5"]:
+        prediction = "B"
+        confidence = 70
+        reason = f"Pattern {pattern} → B"
+    elif pattern in ["TYPE_2", "TYPE_4", "TYPE_6"]:
+        prediction = "P"
+        confidence = 75
+        reason = f"Pattern {pattern} → P"
+    else:
+        prediction = None
+        confidence = 50
+        reason = "Không rõ pattern"
+
+    tie_chance = tie_probability(full_seq)
+    tie_warn = tie_chance > 55
+
+    if len(st.session_state.X_train) >= 10:
+        ml_pred, ml_conf = predict_ml(full_seq)
+    else:
+        ml_pred, ml_conf = None, 0
+
+    if st.session_state.fire_mode and confidence < 85:
+        prediction = None
+        outcome = "⏩ Bỏ qua"
+        symbol = "⏩"
+    elif prediction:
+        if result == prediction:
+            outcome = "✅ ĐÚNG"
+            symbol = "⚪"
+            st.session_state.mistake_count = 0
+        elif result == "T":
+            outcome = "🟢 HÒA"
+            symbol = "🟢"
+        else:
+            outcome = "❌ SAI"
+            symbol = "🟠"
+            st.session_state.mistake_count += 1
+    else:
+        outcome = "⏩ Bỏ qua"
+        symbol = "⏩"
+
+    st.session_state.history.append({
+        "real": result,
+        "predict": prediction,
+        "conf": confidence,
+        "outcome": outcome,
+        "symbol": symbol,
+        "tie_warn": tie_warn,
+        "ml_pred": ml_pred,
+        "ml_conf": ml_conf
+    })
+
+    if len(full_seq) >= 5:
+        st.session_state.X_train.append(full_seq[-5:])
+        st.session_state.y_train.append(result)
+        update_model()
+
+st.markdown("---")
+st.subheader("📊 Thống kê & Kết quả")
+
+total = len(st.session_state.history)
+wins = sum(1 for h in st.session_state.history if h["outcome"] == "✅ ĐÚNG")
+losses = sum(1 for h in st.session_state.history if h["outcome"] == "❌ SAI")
+ties = sum(1 for h in st.session_state.history if h["outcome"] == "🟢 HÒA")
+skips = sum(1 for h in st.session_state.history if h["outcome"] == "⏩ Bỏ qua")
+acc = round((wins / (wins + losses)) * 100, 2) if (wins + losses) > 0 else 0
+
+dna = "".join([h["symbol"] for h in st.session_state.history])
+st.markdown(f"🧬 DNA kết quả: `{dna}`")
+st.markdown(f"✅ Tổng: {total} | 🏆 Đúng: {wins} | ❌ Sai: {losses} | 🟢 Hòa: {ties} | ⏩ Bỏ qua: {skips}")
+st.markdown(f"🎯 Chính xác: `{acc}%`")
+st.markdown(f"💰 Cược đề xuất: `{bet_amount(st.session_state.mistake_count)}`")
+
+if st.session_state.history and st.session_state.history[-1]["tie_warn"]:
+    st.warning("🟢 CẢNH BÁO: Xác suất HÒA cao hơn 55%!")
