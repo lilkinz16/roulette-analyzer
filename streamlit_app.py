@@ -1,8 +1,14 @@
 import streamlit as st
 import plotly.graph_objects as go
+import pandas as pd
 
 # Store failed patterns to avoid reuse
 FAILED_PATTERNS = set()
+
+# Define Baccarat grid board size
+GRID_COLS = 20
+GRID_ROWS = 6
+
 
 def group_results(results):
     groups = []
@@ -84,7 +90,7 @@ def analyze_baccarat(sequence):
         "risk": risk,
         "recommendation": recommendation,
         "strong_signal": strong_signal,
-        "backtest": list(main[-100:]),
+        "backtest": list(main[-10:]),
         "full_sequence": list(sequence),
         "predictions": predict_history(main)
     }
@@ -95,7 +101,29 @@ def predict_history(main):
         prev, last = main[i-2], main[i-1]
         guess = "B" if last == "P" else "P" if prev != last else last
         predictions.append((main[i], guess))
-    return predictions[-100:]  # show longer history
+    return predictions[-10:]
+
+def render_baccarat_grid(results):
+    grid = [["" for _ in range(GRID_COLS)] for _ in range(GRID_ROWS)]
+    col = 0
+    row = 0
+    prev = None
+
+    for symbol in results:
+        if symbol != prev:
+            col += 1
+            row = 0
+            prev = symbol
+        elif row < GRID_ROWS - 1:
+            row += 1
+        else:
+            col += 1
+            row = 0
+        if col < GRID_COLS:
+            grid[row][col] = symbol
+
+    df = pd.DataFrame(grid)
+    st.dataframe(df.style.set_properties(**{'text-align': 'center'}).highlight_null(null_color='white'), height=220)
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
@@ -149,15 +177,13 @@ def main():
             if result['strong_signal'] != "Không":
                 st.success(f"🧠 Gợi ý vào tiền: {result['strong_signal']}")
 
-            st.subheader("📈 Backtest dự đoán (100 ván gần nhất)")
-            hit = 0
-            miss = 0
+            st.subheader("📈 Backtest (10 ván gần nhất)")
             for idx, (real, pred) in enumerate(result['predictions']):
                 ok = real == pred
                 st.markdown(f"#{idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
-                if ok: hit += 1
-                else: miss += 1
-            st.markdown(f"**🎯 Tổng KQ:** {hit}/{len(result['predictions'])} đúng → `{round(hit/len(result['predictions'])*100)}%` chính xác")
+
+            st.subheader("🧮 Bảng Baccarat (lưới trực quan)")
+            render_baccarat_grid(result['backtest'])
 
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
