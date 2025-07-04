@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 # Store failed patterns to avoid reuse
 FAILED_PATTERNS = set()
 
-
 def group_results(results):
     groups = []
     if not results:
@@ -82,17 +81,27 @@ def analyze_baccarat(sequence):
         "risk": risk,
         "recommendation": recommendation,
         "backtest": list(main[-10:]),
-        "full_sequence": list(sequence)
+        "full_sequence": list(sequence),
+        "predictions": predict_history(main)
     }
+
+def predict_history(main):
+    predictions = []
+    for i in range(2, len(main)):
+        prev, last = main[i-2], main[i-1]
+        guess = "B" if last == "P" else "P" if prev != last else last
+        predictions.append((main[i], guess))
+    return predictions[-10:]  # only latest 10
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
     fig = go.Figure(data=go.Scatter(
         x=list(range(1, len(data)+1)),
         y=[1]*len(data),
-        mode='markers',
-        marker=dict(size=16, color=colors),
-        text=data
+        mode='markers+text',
+        marker=dict(size=14, color=colors),
+        text=data,
+        textposition="top center"
     ))
     fig.update_layout(
         title="Bản đồ xu hướng toàn trận",
@@ -101,7 +110,7 @@ def plot_trend_chart(data):
         plot_bgcolor="#0e1117",
         paper_bgcolor="#0e1117",
         font_color="white",
-        height=150
+        height=200
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -134,10 +143,15 @@ def main():
             st.markdown(f"**📍 Risk:** {result['risk']}")
             st.markdown(f"**🧾 Recommendation:** {result['recommendation']}")
 
-            st.subheader("📈 Backtest (10 ván gần nhất)")
-            cols = st.columns(len(result['backtest']))
-            for i, (col, outcome) in enumerate(zip(cols, result['backtest'])):
-                col.metric(label=f"#{i+1}", value=outcome)
+            st.subheader("📈 Backtest dự đoán 10 ván gần nhất")
+            hit = 0
+            miss = 0
+            for idx, (real, pred) in enumerate(result['predictions']):
+                ok = real == pred
+                st.markdown(f"# {idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
+                if ok: hit += 1
+                else: miss += 1
+            st.markdown(f"**🎯 Tổng KQ:** {hit}/10 đúng → `{round(hit/10*100)}%` chính xác")
 
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
