@@ -1,9 +1,11 @@
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
+from pandas.io.formats.style import Styler
 
-# Store failed patterns to avoid reuse
-FAILED_PATTERNS = set()
+# Store failed patterns to avoid reuse (and allow reset)
+if "FAILED_PATTERNS" not in st.session_state:
+    st.session_state.FAILED_PATTERNS = set()
 
 # Define Baccarat grid board size
 GRID_COLS = 20
@@ -58,7 +60,7 @@ def analyze_baccarat(sequence):
     risk = "Normal"
     strong_signal = "Không"
 
-    if pattern in FAILED_PATTERNS:
+    if pattern in st.session_state.FAILED_PATTERNS:
         risk = "Trap"
         confidence = 40
         recommendation = "Avoid"
@@ -80,7 +82,7 @@ def analyze_baccarat(sequence):
     recommendation = "Play" if confidence >= 60 else "Avoid"
 
     if recommendation == "Avoid":
-        FAILED_PATTERNS.add(pattern)
+        st.session_state.FAILED_PATTERNS.add(pattern)
 
     return {
         "developerView": groups,
@@ -103,6 +105,13 @@ def predict_history(main):
         predictions.append((main[i], guess))
     return predictions[-10:]
 
+def color_baccarat(val):
+    if val == "B":
+        return "background-color: #1E90FF; color: white; text-align: center"
+    elif val == "P":
+        return "background-color: #FF6347; color: white; text-align: center"
+    return "text-align: center"
+
 def render_baccarat_grid(results):
     grid = [["" for _ in range(GRID_COLS)] for _ in range(GRID_ROWS)]
     col = 0
@@ -123,7 +132,8 @@ def render_baccarat_grid(results):
             grid[row][col] = symbol
 
     df = pd.DataFrame(grid)
-    st.dataframe(df.style.set_properties(**{'text-align': 'center'}), height=220)
+    styled_df = df.style.applymap(color_baccarat)
+    st.dataframe(styled_df, height=220)
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
@@ -159,6 +169,10 @@ def main():
 
     st.title("🎴 SYNAPSE VISION Baccarat")
 
+    if st.button("♻️ Reset Memory Logic"):
+        st.session_state.FAILED_PATTERNS.clear()
+        st.success("Đã xóa lịch sử pattern thất bại.")
+
     user_input = st.text_input("Nhập kết quả (ví dụ: BBPBPPPPPBBPBBBBPPP):")
 
     if st.button("Phân Tích"):
@@ -187,6 +201,9 @@ def main():
 
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
+
+            st.subheader("📊 Big Road / Small Road (Mô phỏng)")
+            st.info("🚧 Tính năng đang được phát triển: sẽ hiển thị theo chuẩn Big Road, Small Road trong bản cập nhật tiếp theo.")
 
 if __name__ == "__main__":
     main()
