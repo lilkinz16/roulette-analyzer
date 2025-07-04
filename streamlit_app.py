@@ -1,104 +1,82 @@
-import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import streamlit as st
 
-const groupResults = (results) => {
-  const groups = [];
-  let current = results[0];
-  let count = 1;
+def group_results(results):
+    groups = []
+    if not results:
+        return groups
 
-  for (let i = 1; i < results.length; i++) {
-    if (results[i] === current) {
-      count++;
-    } else {
-      groups.push(current.repeat(count));
-      current = results[i];
-      count = 1;
+    current = results[0]
+    count = 1
+    for i in range(1, len(results)):
+        if results[i] == current:
+            count += 1
+        else:
+            groups.append(current * count)
+            current = results[i]
+            count = 1
+    groups.append(current * count)
+    return groups
+
+def analyze_baccarat(sequence):
+    if len(sequence) < 20:
+        return {"error": "Nhập tối thiểu 20 ký tự kết quả."}
+
+    sequence = sequence.upper()
+    base = sequence[:10]
+    main = sequence[10:]
+    groups = group_results(sequence)
+
+    last = main[-1]
+    prev = main[-2] if len(main) >= 2 else None
+    prediction = "⚠️"
+    pattern = "Unknown"
+    confidence = 0
+    risk = "Normal"
+
+    if prev and last == prev:
+        pattern = "Momentum"
+        prediction = last
+        confidence = 70
+    elif prev and ((prev == "P" and last == "B") or (prev == "B" and last == "P")):
+        pattern = "Pingpong"
+        prediction = "B" if last == "P" else "P"
+        confidence = 65
+    else:
+        pattern = "Trap Zone"
+        risk = "Trap"
+        confidence = 50
+
+    recommendation = "Avoid"
+    if confidence >= 60:
+        recommendation = "Play"
+
+    return {
+        "developerView": groups,
+        "prediction": prediction,
+        "confidence": confidence,
+        "pattern": pattern,
+        "risk": risk,
+        "recommendation": recommendation,
     }
-  }
-  groups.push(current.repeat(count));
-  return groups;
-};
 
-const analyzeBaccarat = (sequence) => {
-  if (sequence.length < 20) return { error: "Nhập tối thiểu 20 ký tự kết quả." };
-  const base = sequence.slice(0, 10);
-  const main = sequence.slice(10);
-  const groups = groupResults(sequence);
+def main():
+    st.set_page_config(page_title="SYNAPSE VISION Baccarat", layout="centered")
+    st.title("SYNAPSE VISION Baccarat")
 
-  // Simple Pattern Detection
-  let last = main[main.length - 1];
-  let prev = main[main.length - 2];
-  let prediction = "⚠️";
-  let pattern = "Unknown";
-  let confidence = 0;
-  let risk = "Normal";
+    user_input = st.text_input("Nhập kết quả (ví dụ: BBPBPPPPPBBPBBBBPPP):")
 
-  if (last === prev) {
-    pattern = "Momentum";
-    prediction = last;
-    confidence = 70;
-  } else if ((prev === "P" && last === "B") || (prev === "B" && last === "P")) {
-    pattern = "Pingpong";
-    prediction = last === "P" ? "B" : "P";
-    confidence = 65;
-  } else {
-    pattern = "Trap Zone";
-    risk = "Trap";
-    confidence = 50;
-  }
+    if st.button("Phân Tích"):
+        result = analyze_baccarat(user_input.strip())
 
-  let recommendation = "Avoid";
-  if (confidence >= 60) {
-    recommendation = "Play";
-  }
+        if "error" in result:
+            st.error(result["error"])
+        else:
+            st.subheader("🔬 Phân Tích")
+            st.markdown(f"**🧬 Developer View:** [{', '.join(result['developerView'])}]")
+            st.markdown(f"**🔮 Prediction:** {result['prediction']}")
+            st.markdown(f"**🎯 Accuracy:** {result['confidence']}%")
+            st.markdown(f"**📍 Risk:** {result['risk']}")
+            st.markdown(f"**🧾 Recommendation:** {result['recommendation']}")
 
-  return {
-    developerView: groups,
-    prediction,
-    confidence,
-    pattern,
-    risk,
-    recommendation,
-  };
-};
-
-export default function BaccaratPredictor() {
-  const [input, setInput] = useState("");
-  const [result, setResult] = useState(null);
-
-  const handleAnalyze = () => {
-    const res = analyzeBaccarat(input.trim().toUpperCase());
-    setResult(res);
-  };
-
-  return (
-    <div className="p-4 max-w-xl mx-auto space-y-4">
-      <h1 className="text-xl font-bold">🎲 SYNAPSE VISION Baccarat</h1>
-      <Input
-        placeholder="Nhập kết quả (ví dụ: BBPBPPPPPBBPBBBBPPP)"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-      <Button onClick={handleAnalyze}>Phân Tích</Button>
-      {result && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            {result.error ? (
-              <p className="text-red-500">{result.error}</p>
-            ) : (
-              <>
-                <p>🧬 <strong>Developer View:</strong> [{result.developerView.join(", ")}]</p>
-                <p>🔮 <strong>Prediction:</strong> {result.prediction}</p>
-                <p>🎯 <strong>Accuracy:</strong> {result.confidence}%</p>
-                <p>📍 <strong>Risk:</strong> {result.risk}</p>
-                <p>🧾 <strong>Recommendation:</strong> {result.recommendation}</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
+if __name__ == "__main__":
+    main()
