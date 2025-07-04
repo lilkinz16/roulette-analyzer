@@ -7,16 +7,12 @@ from pandas.io.formats.style import Styler
 if "FAILED_PATTERNS" not in st.session_state:
     st.session_state.FAILED_PATTERNS = set()
 
-# Define Baccarat grid board size
-GRID_COLS = 20
 GRID_ROWS = 6
-
 
 def group_results(results):
     groups = []
     if not results:
         return groups
-
     current = results[0]
     count = 1
     for i in range(1, len(results)):
@@ -32,7 +28,6 @@ def group_results(results):
 def detect_pattern(groups):
     if not groups:
         return "Unknown"
-
     last = groups[-1]
     if len(last) >= 4:
         return "Dragon"
@@ -45,13 +40,11 @@ def detect_pattern(groups):
 def analyze_baccarat(sequence):
     if len(sequence) < 20:
         return {"error": "Nhập tối thiểu 20 ký tự kết quả."}
-
     sequence = sequence.upper()
     base = sequence[:10]
     main = sequence[10:]
     groups = group_results(sequence)
     pattern_type = detect_pattern(groups)
-
     last = main[-1]
     prev = main[-2] if len(main) >= 2 else None
     prediction = "⚠️"
@@ -59,7 +52,6 @@ def analyze_baccarat(sequence):
     confidence = 0
     risk = "Normal"
     strong_signal = "Không"
-
     if pattern in st.session_state.FAILED_PATTERNS:
         risk = "Trap"
         confidence = 40
@@ -78,12 +70,9 @@ def analyze_baccarat(sequence):
     else:
         risk = "Trap"
         confidence = 50
-
     recommendation = "Play" if confidence >= 60 else "Avoid"
-
     if recommendation == "Avoid":
         st.session_state.FAILED_PATTERNS.add(pattern)
-
     return {
         "developerView": groups,
         "prediction": prediction,
@@ -113,11 +102,10 @@ def color_baccarat(val):
     return "text-align: center"
 
 def render_baccarat_grid(results):
-    grid = [["" for _ in range(GRID_COLS)] for _ in range(GRID_ROWS)]
+    grid = [["" for _ in range(20)] for _ in range(GRID_ROWS)]
     col = 0
     row = 0
     prev = None
-
     for symbol in results:
         if symbol != prev:
             col += 1
@@ -128,12 +116,34 @@ def render_baccarat_grid(results):
         else:
             col += 1
             row = 0
-        if col < GRID_COLS:
+        if col < 20:
             grid[row][col] = symbol
-
     df = pd.DataFrame(grid)
     styled_df = df.style.applymap(color_baccarat)
     st.dataframe(styled_df, height=220)
+
+def render_big_road(sequence):
+    board = [["" for _ in range(40)] for _ in range(6)]
+    col, row = 0, 0
+    last_type = None
+    row_tracker = {}
+    for idx, result in enumerate(sequence):
+        if result == last_type:
+            if (col, row + 1) not in row_tracker and row + 1 < GRID_ROWS:
+                row += 1
+            else:
+                col += 1
+                row = 0
+        else:
+            if idx != 0:
+                col += 1
+                row = 0
+        board[row][col] = result
+        row_tracker[(col, row)] = True
+        last_type = result
+    df = pd.DataFrame(board)
+    styled_df = df.style.applymap(color_baccarat)
+    st.dataframe(styled_df, height=250)
 
 def plot_trend_chart(data):
     colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
@@ -166,18 +176,13 @@ def main():
         }
         </style>
         """, unsafe_allow_html=True)
-
     st.title("🎴 SYNAPSE VISION Baccarat")
-
     if st.button("♻️ Reset Memory Logic"):
         st.session_state.FAILED_PATTERNS.clear()
         st.success("Đã xóa lịch sử pattern thất bại.")
-
     user_input = st.text_input("Nhập kết quả (ví dụ: BBPBPPPPPBBPBBBBPPP):")
-
     if st.button("Phân Tích"):
         result = analyze_baccarat(user_input.strip())
-
         if "error" in result:
             st.error(result["error"])
         else:
@@ -190,20 +195,16 @@ def main():
             st.markdown(f"**🧾 Recommendation:** {result['recommendation']}")
             if result['strong_signal'] != "Không":
                 st.success(f"🧠 Gợi ý vào tiền: {result['strong_signal']}")
-
             st.subheader("📈 Backtest (10 ván gần nhất)")
             for idx, (real, pred) in enumerate(result['predictions']):
                 ok = real == pred
                 st.markdown(f"#{idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
-
             st.subheader("🧮 Bảng Baccarat (lưới trực quan)")
             render_baccarat_grid(result['backtest'])
-
             st.subheader("📊 Bản đồ xu hướng toàn trận")
             plot_trend_chart(result['full_sequence'])
-
-            st.subheader("📊 Big Road / Small Road (Mô phỏng)")
-            st.info("🚧 Tính năng đang được phát triển: sẽ hiển thị theo chuẩn Big Road, Small Road trong bản cập nhật tiếp theo.")
+            st.subheader("📊 Big Road")
+            render_big_road(result['full_sequence'])
 
 if __name__ == "__main__":
     main()
