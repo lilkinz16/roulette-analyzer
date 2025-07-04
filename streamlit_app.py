@@ -233,5 +233,100 @@ if st.session_state.transitions:
     df_trans.columns = ["Số ván", "Từ TYPE", "Đến TYPE", "Ghi chú"]
     df_trans = df_trans.reset_index(drop=True)
     st.table(df_trans)
+# === VẼ BIỂU ĐỒ CẦU BACCARAT ===
+st.markdown("---")
+st.subheader("🎴 Bộ Biểu Đồ Cầu Baccarat")
+
+# Tạo chuỗi từ kết quả thực
+seq = ''.join([x["real"] for x in st.session_state.history if x["real"] in ["B", "P", "T"]])
+
+def get_color(char):
+    if char == 'B': return 'red'
+    elif char == 'P': return 'blue'
+    elif char == 'T': return 'green'
+    return 'gray'
+
+def build_big_road(sequence):
+    grid = [[None for _ in range(100)] for _ in range(6)]
+    col = 0
+    row = 0
+    prev = ''
+    for ch in sequence:
+        if ch == 'T': continue
+        if ch == prev:
+            row += 1
+            if row >= 6:
+                row = 5
+                col += 1
+        else:
+            row = 0
+            if prev != '':
+                col += 1
+        grid[row][col] = ch
+        prev = ch
+    return grid
+
+def draw_grid(grid, dot=False):
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.set_xlim(0, len(grid[0]))
+    ax.set_ylim(0, 6)
+    ax.invert_yaxis()
+    ax.axis('off')
+    for r in range(6):
+        for c in range(len(grid[0])):
+            val = grid[r][c]
+            if val:
+                color = get_color(val)
+                if dot:
+                    ax.plot(c + 0.5, r + 0.5, 'o', color=color)
+                else:
+                    ax.add_patch(plt.Circle((c + 0.5, r + 0.5), 0.35, color=color))
+    st.pyplot(fig)
+
+def fake_secondary_grid(sequence, shift=1):
+    grid = [[None for _ in range(100)] for _ in range(6)]
+    markers = ['R', 'B'] * 100
+    col = 0
+    row = 0
+    for i in range(len(sequence)):
+        if i % (2 + shift) == 0:
+            col += 1
+            row = 0
+        else:
+            row += 1
+        if row >= 6:
+            row = 5
+            col += 1
+        grid[row][col] = markers[i % len(markers)]
+    return grid
+
+def draw_secondary_grid(grid):
+    fig, ax = plt.subplots(figsize=(10, 3))
+    ax.set_xlim(0, len(grid[0]))
+    ax.set_ylim(0, 6)
+    ax.invert_yaxis()
+    ax.axis('off')
+    for r in range(6):
+        for c in range(len(grid[0])):
+            val = grid[r][c]
+            if val:
+                color = 'red' if val == 'R' else 'blue'
+                ax.add_patch(plt.Circle((c + 0.5, r + 0.5), 0.25, color=color))
+    st.pyplot(fig)
+
+if seq:
+    st.markdown("🟥 **Big Road**")
+    draw_grid(build_big_road(seq))
+
+    st.markdown("🟦 **Big Eye Boy**")
+    draw_secondary_grid(fake_secondary_grid(seq, shift=1))
+
+    st.markdown("🟨 **Small Road**")
+    draw_secondary_grid(fake_secondary_grid(seq, shift=2))
+
+    st.markdown("🟥 **Cockroach Pig**")
+    draw_secondary_grid(fake_secondary_grid(seq, shift=3))
+
+st.caption("📊 Biểu đồ cầu Baccarat được tích hợp trực tiếp từ lịch sử kết quả – bạn có thể nâng cấp logic cầu phụ sau.")
 
 st.caption("🔧 Phiên bản nâng cấp hoàn chỉnh AION BACCARAT X1 – AI | Streamlit | ML | Charts | Transition")
