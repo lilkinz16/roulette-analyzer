@@ -1,210 +1,64 @@
 import streamlit as st
-import plotly.graph_objects as go
-import pandas as pd
-from pandas.io.formats.style import Styler
 
-# Store failed patterns to avoid reuse (and allow reset)
-if "FAILED_PATTERNS" not in st.session_state:
-    st.session_state.FAILED_PATTERNS = set()
+st.set_page_config(page_title="AION BACCARAT X1", layout="centered")
 
-GRID_ROWS = 6
+st.title("🎯 AION BACCARAT X1 – Dự đoán Baccarat bằng AI")
 
-def group_results(results):
-    groups = []
-    if not results:
-        return groups
-    current = results[0]
-    count = 1
-    for i in range(1, len(results)):
-        if results[i] == current:
-            count += 1
+# Nhập chuỗi kết quả
+user_input = st.text_input("🔢 Nhập chuỗi kết quả gần nhất (ví dụ: BPPBT)", max_chars=100).upper()
+
+def parse_streaks(sequence):
+    streaks = []
+    current = ''
+    for ch in sequence:
+        if ch == 'T':
+            continue  # Bỏ qua Tie
+        if current == '' or current[0] == ch:
+            current += ch
         else:
-            groups.append(current * count)
-            current = results[i]
-            count = 1
-    groups.append(current * count)
-    return groups
+            streaks.append(current)
+            current = ch
+    if current:
+        streaks.append(current)
+    return streaks
 
-def detect_pattern(groups):
-    if not groups:
-        return "Unknown"
-    last = groups[-1]
-    if len(last) >= 4:
-        return "Dragon"
-    elif len(groups) >= 2 and len(groups[-1]) == 2 and len(groups[-2]) == 2:
-        return "Two-Cut"
-    elif len(groups) >= 3 and groups[-1][0] != groups[-2][0] != groups[-3][0]:
-        return "Pingpong"
-    return "Unstable"
+def detect_pattern_type(streaks):
+    if len(streaks) < 2:
+        return None
+    last_two = streaks[-2:]
+    if len(last_two[0]) == len(last_two[1]):
+        return "TYPE_1"  # Balanced Pairing
+    elif len(last_two[0]) >= 2 and len(last_two[1]) == 1:
+        return "TYPE_2"  # Cutpoint-1
+    return None
 
-def analyze_baccarat(sequence):
-    if len(sequence) < 20:
-        return {"error": "Nhập tối thiểu 20 ký tự kết quả."}
-    sequence = sequence.upper()
-    base = sequence[:10]
-    main = sequence[10:]
-    groups = group_results(sequence)
-    pattern_type = detect_pattern(groups)
-    last = main[-1]
-    prev = main[-2] if len(main) >= 2 else None
-    prediction = "⚠️"
-    pattern = pattern_type
-    confidence = 0
-    risk = "Normal"
-    strong_signal = "Không"
-    if pattern in st.session_state.FAILED_PATTERNS:
-        risk = "Trap"
-        confidence = 40
-        recommendation = "Avoid"
-    elif pattern == "Dragon":
-        prediction = last
-        confidence = 75
-        strong_signal = "🔥 Có thể vào tiền mạnh (Dragon)"
-    elif pattern == "Two-Cut":
-        prediction = "B" if last == "P" else "P"
-        confidence = 70
-        strong_signal = "✅ Ổn định, có thể cân nhắc"
-    elif pattern == "Pingpong":
-        prediction = "B" if last == "P" else "P"
-        confidence = 65
+def suggest_next_move(pattern_type):
+    if pattern_type == "TYPE_1":
+        return ("B", 70, "Phát hiện mẫu cặp cân bằng (BP)")
+    elif pattern_type == "TYPE_2":
+        return ("P", 75, "Chu kỳ Cutpoint-1 PPB đang diễn ra")
     else:
-        risk = "Trap"
-        confidence = 50
-    recommendation = "Play" if confidence >= 60 else "Avoid"
-    if recommendation == "Avoid":
-        st.session_state.FAILED_PATTERNS.add(pattern)
-    return {
-        "developerView": groups,
-        "prediction": prediction,
-        "confidence": confidence,
-        "pattern": pattern,
-        "risk": risk,
-        "recommendation": recommendation,
-        "strong_signal": strong_signal,
-        "backtest": list(main[-10:]),
-        "full_sequence": list(sequence),
-        "predictions": predict_history(main)
-    }
+        return (None, 50, "⏩ Bỏ qua – Không đủ tự tin để dự đoán")
 
-def predict_history(main):
-    predictions = []
-    for i in range(2, len(main)):
-        prev, last = main[i-2], main[i-1]
-        guess = "B" if last == "P" else "P" if prev != last else last
-        predictions.append((main[i], guess))
-    return predictions[-10:]
+# Khi người dùng đã nhập chuỗi
+if user_input:
+    st.markdown("### 📊 Phân tích:")
+    streaks = parse_streaks(user_input)
+    pattern_type = detect_pattern_type(streaks)
+    next_move, confidence, reason = suggest_next_move(pattern_type)
 
-def color_baccarat(val):
-    if val == "B":
-        return "background-color: #1E90FF; color: white; text-align: center"
-    elif val == "P":
-        return "background-color: #FF6347; color: white; text-align: center"
-    return "text-align: center"
+    st.markdown(f"🧬 **Kết quả trước:** `{user_input}`")
+    st.markdown(f"🧩 **Mẫu phát hiện:** `{pattern_type or 'Không xác định'}`")
 
-def render_baccarat_grid(results):
-    grid = [["" for _ in range(20)] for _ in range(GRID_ROWS)]
-    col = 0
-    row = 0
-    prev = None
-    for symbol in results:
-        if symbol != prev:
-            col += 1
-            row = 0
-            prev = symbol
-        elif row < GRID_ROWS - 1:
-            row += 1
-        else:
-            col += 1
-            row = 0
-        if col < 20:
-            grid[row][col] = symbol
-    df = pd.DataFrame(grid)
-    styled_df = df.style.applymap(color_baccarat)
-    st.dataframe(styled_df, height=220)
+    if confidence >= 65 and next_move:
+        icon = "🔴" if next_move == "B" else "🔵"
+        st.success(f"🔍 **Dự đoán tiếp theo:** {icon} `{next_move}` – {confidence}%")
+        st.markdown(f"🔮 **Lý do:** {reason}")
+    else:
+        st.warning("⏩ Bỏ qua – Độ tự tin dưới 65%")
 
-def render_big_road(sequence):
-    board = [["" for _ in range(40)] for _ in range(6)]
-    col, row = 0, 0
-    last_type = None
-    row_tracker = {}
-    for idx, result in enumerate(sequence):
-        if result == last_type:
-            if (col, row + 1) not in row_tracker and row + 1 < GRID_ROWS:
-                row += 1
-            else:
-                col += 1
-                row = 0
-        else:
-            if idx != 0:
-                col += 1
-                row = 0
-        board[row][col] = result
-        row_tracker[(col, row)] = True
-        last_type = result
-    df = pd.DataFrame(board)
-    styled_df = df.style.applymap(color_baccarat)
-    st.dataframe(styled_df, height=250)
+else:
+    st.info("⏳ Vui lòng nhập chuỗi kết quả để bắt đầu dự đoán.")
 
-def plot_trend_chart(data):
-    colors = ["blue" if x == "B" else "red" if x == "P" else "gray" for x in data]
-    fig = go.Figure(data=go.Scatter(
-        x=list(range(1, len(data)+1)),
-        y=[1]*len(data),
-        mode='markers+text',
-        marker=dict(size=14, color=colors),
-        text=data,
-        textposition="top center"
-    ))
-    fig.update_layout(
-        title="Bản đồ xu hướng toàn trận",
-        xaxis_title="Hand",
-        yaxis_visible=False,
-        plot_bgcolor="#0e1117",
-        paper_bgcolor="#0e1117",
-        font_color="white",
-        height=200
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-def main():
-    st.set_page_config(page_title="SYNAPSE VISION Baccarat", layout="centered")
-    st.markdown("""
-        <style>
-        body, .stApp {
-            background-color: #0e1117;
-            color: white;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-    st.title("🎴 SYNAPSE VISION Baccarat")
-    if st.button("♻️ Reset Memory Logic"):
-        st.session_state.FAILED_PATTERNS.clear()
-        st.success("Đã xóa lịch sử pattern thất bại.")
-    user_input = st.text_input("Nhập kết quả (ví dụ: BBPBPPPPPBBPBBBBPPP):")
-    if st.button("Phân Tích"):
-        result = analyze_baccarat(user_input.strip())
-        if "error" in result:
-            st.error(result["error"])
-        else:
-            st.subheader("🔬 Phân Tích")
-            st.markdown(f"**🧬 Developer View:** [{', '.join(result['developerView'])}]")
-            st.markdown(f"**📊 Pattern Detected:** {result['pattern']}")
-            st.markdown(f"**🔮 Prediction:** {result['prediction']}")
-            st.markdown(f"**🎯 Accuracy:** {result['confidence']}%")
-            st.markdown(f"**📍 Risk:** {result['risk']}")
-            st.markdown(f"**🧾 Recommendation:** {result['recommendation']}")
-            if result['strong_signal'] != "Không":
-                st.success(f"🧠 Gợi ý vào tiền: {result['strong_signal']}")
-            st.subheader("📈 Backtest (10 ván gần nhất)")
-            for idx, (real, pred) in enumerate(result['predictions']):
-                ok = real == pred
-                st.markdown(f"#{idx+1}: Thật = `{real}` | Dự = `{pred}` → {'✅' if ok else '❌'}")
-            st.subheader("🧮 Bảng Baccarat (lưới trực quan)")
-            render_baccarat_grid(result['backtest'])
-            st.subheader("📊 Bản đồ xu hướng toàn trận")
-            plot_trend_chart(result['full_sequence'])
-            st.subheader("📊 Big Road")
-            render_big_road(result['full_sequence'])
-
-if __name__ == "__main__":
-    main()
+st.markdown("---")
+st.caption("🤖 Phiên bản đơn giản hóa từ AI AION BACCARAT X1 – dành cho thử nghiệm chiến lược đọc cầu")
