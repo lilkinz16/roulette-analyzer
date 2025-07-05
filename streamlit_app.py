@@ -57,8 +57,8 @@ with col1:
     group_input_1 = {
         'A': st.text_input("P1 - Nhóm A:", "0, 17, 16, 18"),
         'B': st.text_input("P1 - Nhóm B:", "16, 18"),
-        'C': st.text_input("P1 - Nhóm C:", "1-15, 19, 20"),
-        'D': st.text_input("P1 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
+        'C': st.text_input("P1 - Nhóm C:", "0,8,9,7,28,29,30"),
+        'D': st.text_input("P1 - Nhóm D:", "1,2,3,4,5,6,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,31,32,33,34,35,36"),
     }
 
     group_map_1 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_1.items()}
@@ -107,10 +107,10 @@ with col3:
     num3 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num3")
 
     group_input_3 = {
-        'A': st.text_input("P3 - Nhóm A:", "0, 19, 20, 21"),
+        'A': st.text_input("P3 - Nhóm A:", "0, 13,14,15,22,23,24"),
         'B': st.text_input("P3 - Nhóm B:", "1,10"),
         'C': st.text_input("P3 - Nhóm C:", "14,11"),
-        'D': st.text_input("P3 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
+        'D': st.text_input("P3 - Nhóm D:", "1,2,3,4,5,6,7,8,9,10,11,12,16,17,18,19,20,21,25,26,27,28,29,30,31,32,33,34,35,36"),
     }
 
     group_map_3 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_3.items()}
