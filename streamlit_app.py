@@ -125,3 +125,85 @@ with col3:
 
     group_colors_3 = {'A': "#E91E63", 'B': "#00BCD4", 'C': "#CDDC39", 'D': "#FF5722", '?': "#BDBDBD"}
     draw_baccarat_board(groups_3, group_colors_3, num3)
+
+# ===== 3 cột bảng ngang tiếp theo =====
+col4, col5, col6 = st.columns(3)
+
+# ===== PHƯƠNG PHÁP 4 =====
+with col4:
+    st.subheader("🆔 Phương pháp 4")
+
+    num4 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num4")
+
+    group_input_4 = {
+        'A': st.text_input("P4 - Nhóm A:", "0, 3, 5"),
+        'B': st.text_input("P4 - Nhóm B:", "1, 2"),
+        'C': st.text_input("P4 - Nhóm C:", "10,11"),
+        'D': st.text_input("P4 - Nhóm D:", "4,6,7,8,9,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
+    }
+
+    group_map_4 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_4.items()}
+
+    def find_group_4(n):
+        for g, vals in group_map_4.items():
+            if n in vals:
+                return g
+        return "?"
+
+    groups_4 = [find_group_4(n) for n in numbers]
+
+    group_colors_4 = {'A': "#9C27B0", 'B': "#3F51B5", 'C': "#009688", 'D': "#FF5722", '?': "#BDBDBD"}
+    draw_baccarat_board(groups_4, group_colors_4, num4)
+
+# ===== PHƯƠNG PHÁP 5 =====
+with col5:
+    st.subheader("🅾️ Phương pháp 5")
+
+    num5 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num5")
+
+    group_input_5 = {
+        'A': st.text_input("P5 - Nhóm A:", "2, 4, 6"),
+        'B': st.text_input("P5 - Nhóm B:", "0, 1, 3"),
+        'C': st.text_input("P5 - Nhóm C:", "8,9"),
+        'D': st.text_input("P5 - Nhóm D:", "5,7,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
+    }
+
+    group_map_5 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_5.items()}
+
+    def find_group_5(n):
+        for g, vals in group_map_5.items():
+            if n in vals:
+                return g
+        return "?"
+
+    groups_5 = [find_group_5(n) for n in numbers]
+
+    group_colors_5 = {'A': "#673AB7", 'B': "#00BCD4", 'C': "#CDDC39", 'D': "#FF9800", '?': "#9E9E9E"}
+    draw_baccarat_board(groups_5, group_colors_5, num5)
+
+# ===== PHƯƠNG PHÁP 6 =====
+with col6:
+    st.subheader("🆓 Phương pháp 6")
+
+    num6 = st.radio("Số cột hiển thị:", [10, 30, 50, 100], index=1, key="num6")
+
+    group_input_6 = {
+        'A': st.text_input("P6 - Nhóm A:", "12,14,16"),
+        'B': st.text_input("P6 - Nhóm B:", "1,5"),
+        'C': st.text_input("P6 - Nhóm C:", "7,8,9"),
+        'D': st.text_input("P6 - Nhóm D:", "0,2,3,4,6,10,11,13,15,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36"),
+    }
+
+    group_map_6 = {g: [int(x) for x in re.findall(r'\d+', v)] for g, v in group_input_6.items()}
+
+    def find_group_6(n):
+        for g, vals in group_map_6.items():
+            if n in vals:
+                return g
+        return "?"
+
+    groups_6 = [find_group_6(n) for n in numbers]
+
+    group_colors_6 = {'A': "#E91E63", 'B': "#2196F3", 'C': "#4CAF50", 'D': "#9E9E9E", '?': "#BDBDBD"}
+    draw_baccarat_board(groups_6, group_colors_6, num6)
+
